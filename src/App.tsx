@@ -91,29 +91,29 @@ const App: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    };    const handleSearchFocus = () => {
+    }; const handleSearchFocus = () => {
         // Reset to home state when clicking the title
         setCurrentBook(null);
         setError(null);
         setSelectedAction(null);
-        
+
         // Focus the search input if available
         if (searchInputRef) {
             searchInputRef.focus();
         }
     };
-    
+
     const handleRetry = () => {
         setError(null);
         setCurrentBook(null);
         setSelectedAction(null);
     };
-    
+
     const handleActionSelect = (action: ActionableStep) => {
         setSelectedAction(action);
         window.scrollTo(0, 0);
     };
-    
+
     const handleBackToBook = () => {
         setSelectedAction(null);
         window.scrollTo(0, 0);
@@ -150,13 +150,13 @@ const App: React.FC = () => {
                 )}
 
                 {currentBook && !selectedAction && !error && !isLoading && (
-                    <BookResult 
-                        book={currentBook} 
-                        isDarkMode={isDarkMode} 
+                    <BookResult
+                        book={currentBook}
+                        isDarkMode={isDarkMode}
                         onActionSelect={handleActionSelect}
                     />
                 )}
-                
+
                 {selectedAction && currentBook && !error && !isLoading && (
                     <ActionStepDetail
                         step={selectedAction}

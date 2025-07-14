@@ -122,7 +122,7 @@ Please analyze: "${bookTitle}"`;
                 if (!step.step || !step.chapter || !step.day) {
                     throw new Error('Invalid actionable step format: missing step, chapter, or day');
                 }
-                
+
                 // Ensure details property exists
                 if (!step.details) {
                     step.details = {
@@ -136,7 +136,7 @@ Please analyze: "${bookTitle}"`;
                         keyTakeaway: `The most important aspect of "${step.step}" is consistency and intentional practice.`
                     };
                 }
-                
+
                 // Ensure sentences and keyTakeaway properties exist
                 if (!step.details.sentences || !Array.isArray(step.details.sentences) || step.details.sentences.length < 1) {
                     step.details.sentences = [
@@ -147,7 +147,7 @@ Please analyze: "${bookTitle}"`;
                         `Try implementing this consistently for at least 21 days to form a habit.`
                     ];
                 }
-                
+
                 if (!step.details.keyTakeaway) {
                     step.details.keyTakeaway = `The most important aspect of "${step.step}" is consistency and intentional practice.`;
                 }

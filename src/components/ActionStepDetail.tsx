@@ -18,7 +18,7 @@ const ActionStepDetail: React.FC<ActionStepDetailProps> = ({ step, bookTitle, on
     const [voiceMenuOpen, setVoiceMenuOpen] = useState<boolean>(false);
     const voiceMenuRef = useRef<HTMLDivElement>(null);
     const settingsButtonRef = useRef<HTMLButtonElement>(null);
-    
+
     // If detailed info isn't available, generate some placeholder content based on the step
     const details = step.details || {
         sentences: [
@@ -30,7 +30,7 @@ const ActionStepDetail: React.FC<ActionStepDetailProps> = ({ step, bookTitle, on
         ],
         keyTakeaway: `The most important aspect of "${step.step}" is consistency and intentional practice.`
     };
-    
+
     // Click outside handler for voice menu
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -116,7 +116,7 @@ const ActionStepDetail: React.FC<ActionStepDetailProps> = ({ step, bookTitle, on
         let textToRead = `Action step for day ${step.day}. ${step.step}. From ${step.chapter}.\n\n`;
         textToRead += `Key takeaway: ${details.keyTakeaway}\n\n`;
         textToRead += `Detailed implementation:\n`;
-        
+
         details.sentences.forEach((sentence, index) => {
             textToRead += `Point ${index + 1}: ${sentence}\n`;
         });
@@ -233,12 +233,12 @@ const ActionStepDetail: React.FC<ActionStepDetailProps> = ({ step, bookTitle, on
             `Key takeaway: ${details.keyTakeaway}\n\n` +
             `Details:\n${details.sentences.join('\n')}`
         );
-        
+
         // Generate a date 1 day from now for the default date
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         const startDate = tomorrow.toISOString().split('T')[0].replace(/-/g, '');
-        
+
         return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${eventTitle}&details=${eventDetails}&dates=${startDate}/${startDate}`;
     };
 
@@ -246,7 +246,7 @@ const ActionStepDetail: React.FC<ActionStepDetailProps> = ({ step, bookTitle, on
         <div className={`${isDarkMode ? 'bg-gray-800 bg-opacity-70' : 'bg-white bg-opacity-80'} rounded-2xl p-8 shadow-2xl glass-effect max-w-4xl mx-auto mb-12`}>
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center">
-                    <button 
+                    <button
                         onClick={onBack}
                         className={`mr-4 p-2 rounded-full ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'} transition-colors`}
                     >
@@ -256,7 +256,7 @@ const ActionStepDetail: React.FC<ActionStepDetailProps> = ({ step, bookTitle, on
                         {step.day ? `Day ${step.day}: ` : ''}Action Detail
                     </h2>
                 </div>
-                
+
                 {/* Read Aloud and Settings Buttons */}
                 <div className="flex gap-3 items-center relative z-50">
                     {/* Read Aloud Buttons */}
@@ -421,7 +421,7 @@ const ActionStepDetail: React.FC<ActionStepDetailProps> = ({ step, bookTitle, on
                 <div className={`${isDarkMode ? 'text-white text-opacity-80' : 'text-gray-600'} text-sm`}>
                     From <span className="font-medium">{bookTitle}</span>
                 </div>
-                <a 
+                <a
                     href={createCalendarLink()}
                     target="_blank"
                     rel="noopener noreferrer"
