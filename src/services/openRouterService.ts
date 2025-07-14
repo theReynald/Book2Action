@@ -2,7 +2,7 @@ import axios from 'axios';
 import { Book, BookSearchResult } from '../types/Book';
 
 // OpenRouter configuration
-const OPENROUTER_API_KEY = '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';
+const OPENROUTER_API_KEY = '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';
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const MODEL = 'x-ai/grok-4';
 

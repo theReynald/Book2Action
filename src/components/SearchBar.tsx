@@ -33,7 +33,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading }) => {
                         <button
                             type="submit"
                             disabled={!searchTerm.trim() || isLoading}
-                            className="absolute right-2 top-1/2 transform -translate-y-1/2 button-gradient text-white px-6 py-2 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 button-gradient text-white px-6 py-2 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 hover:brightness-110 transition-all duration-200"
                         >
                             {isLoading ? (
                                 <>
