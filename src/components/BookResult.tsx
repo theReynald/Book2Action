@@ -1,0 +1,81 @@
+import React from 'react';
+import { Book } from '../types/Book';
+import { BookOpen, User, Calendar, Tag, CheckCircle } from 'lucide-react';
+
+interface BookResultProps {
+    book: Book;
+}
+
+const BookResult: React.FC<BookResultProps> = ({ book }) => {
+    return (
+        <div className="max-w-4xl mx-auto animate-fade-in">
+            {/* Book Header */}
+            <div className="glass-effect rounded-2xl p-8 mb-8 shadow-2xl">
+                <div className="flex items-start space-x-6">
+                    <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl p-4 flex-shrink-0">
+                        <BookOpen className="w-12 h-12 text-white" />
+                    </div>
+                    <div className="flex-1">
+                        <h2 className="text-3xl font-bold text-white mb-3">{book.title}</h2>
+                        <div className="flex flex-wrap gap-4 text-white text-opacity-80">
+                            <div className="flex items-center">
+                                <User className="w-4 h-4 mr-2" />
+                                <span>{book.author}</span>
+                            </div>
+                            {book.publishedYear && (
+                                <div className="flex items-center">
+                                    <Calendar className="w-4 h-4 mr-2" />
+                                    <span>{book.publishedYear}</span>
+                                </div>
+                            )}
+                            {book.genre && (
+                                <div className="flex items-center">
+                                    <Tag className="w-4 h-4 mr-2" />
+                                    <span>{book.genre}</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Summary Section */}
+            <div className="glass-effect rounded-2xl p-8 mb-8 shadow-2xl">
+                <h3 className="text-2xl font-bold text-white mb-4 flex items-center">
+                    <BookOpen className="w-6 h-6 mr-3" />
+                    Summary
+                </h3>
+                <p className="text-white text-opacity-90 leading-relaxed text-lg">
+                    {book.summary}
+                </p>
+            </div>
+
+            {/* Actionable Steps Section */}
+            <div className="glass-effect rounded-2xl p-8 shadow-2xl">
+                <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
+                    <CheckCircle className="w-6 h-6 mr-3" />
+                    10 Actionable Steps
+                </h3>
+                <div className="grid gap-4">
+                    {book.actionableSteps.map((step, index) => (
+                        <div
+                            key={index}
+                            className="bg-white bg-opacity-10 rounded-xl p-4 backdrop-blur-sm border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300"
+                        >
+                            <div className="flex items-start space-x-4">
+                                <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-full w-8 h-8 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                                    {index + 1}
+                                </div>
+                                <p className="text-white text-opacity-90 leading-relaxed">
+                                    {step}
+                                </p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default BookResult;
