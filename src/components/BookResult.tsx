@@ -12,8 +12,40 @@ const BookResult: React.FC<BookResultProps> = ({ book }) => {
             {/* Book Header */}
             <div className="glass-effect rounded-2xl p-8 mb-8 shadow-2xl">
                 <div className="flex items-start space-x-6">
-                    <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl p-4 flex-shrink-0">
-                        <BookOpen className="w-12 h-12 text-white" />
+                    {/* Book Cover Image */}
+                    <div className="flex-shrink-0">
+                        {book.coverImageUrl ? (
+                            <img
+                                src={book.coverImageUrl}
+                                alt={`${book.title} cover`}
+                                className="w-24 h-32 object-cover rounded-xl shadow-lg border-2 border-white border-opacity-20"
+                                onError={(e) => {
+                                    const img = e.currentTarget;
+                                    const currentSrc = img.src;
+
+                                    // Try alternative sources if available
+                                    if (book.isbn && currentSrc.includes('openlibrary.org/b/isbn/')) {
+                                        // Try Google Books as fallback
+                                        img.src = `https://books.google.com/books/content?id=${book.isbn}&printsec=frontcover&img=1&zoom=1&source=gbs_api`;
+                                    } else if (book.isbn && currentSrc.includes('books.google.com')) {
+                                        // Try title-based as final fallback
+                                        const encodedTitle = encodeURIComponent(book.title);
+                                        img.src = `https://covers.openlibrary.org/b/title/${encodedTitle}-L.jpg`;
+                                    } else {
+                                        // Show fallback icon
+                                        img.style.display = 'none';
+                                        const fallback = img.nextElementSibling as HTMLElement;
+                                        if (fallback) fallback.style.display = 'flex';
+                                    }
+                                }}
+                            />
+                        ) : null}
+                        <div
+                            className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl p-4 w-24 h-32 flex items-center justify-center"
+                            style={{ display: book.coverImageUrl ? 'none' : 'flex' }}
+                        >
+                            <BookOpen className="w-8 h-8 text-white" />
+                        </div>
                     </div>
                     <div className="flex-1">
                         <h2 className="text-3xl font-bold text-white mb-3">{book.title}</h2>

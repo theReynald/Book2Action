@@ -30,12 +30,22 @@ cd Book2Action
 npm install
 ```
 
-3. Start the development server:
+3. Set up environment variables:
+```bash
+cp .env.example .env
+```
+Then edit `.env` and add your OpenRouter API key:
+```
+REACT_APP_OPENROUTER_API_KEY=your_openrouter_api_key_here
+```
+Get your API key from [OpenRouter](https://openrouter.ai/)
+
+4. Start the development server:
 ```bash
 npm start
 ```
 
-4. Open [http://localhost:3001](http://localhost:3001) to view it in the browser.
+5. Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
 ## Available Scripts
 
@@ -49,7 +59,14 @@ npm start
 - **React 18** with TypeScript
 - **Tailwind CSS** for styling
 - **Lucide React** for icons
-- **Axios** for API calls (future integration)
+- **Axios** for API calls
+- **OpenRouter API** with Grok for AI-powered book analysis
+
+## Environment Variables
+
+The following environment variables are required:
+
+- `REACT_APP_OPENROUTER_API_KEY` - Your OpenRouter API key for AI-powered book analysis
 
 ## Sample Books
 

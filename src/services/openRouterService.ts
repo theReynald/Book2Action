@@ -2,9 +2,9 @@ import axios from 'axios';
 import { Book, BookSearchResult } from '../types/Book';
 
 // OpenRouter configuration
-const OPENROUTER_API_KEY = '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';
+const OPENROUTER_API_KEY = process.env.REACT_APP_OPENROUTER_API_KEY || '';
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const MODEL = 'x-ai/grok-4';
+const MODEL = 'openai/gpt-4.1';
 
 interface OpenRouterResponse {
     choices: Array<{
@@ -19,7 +19,13 @@ const generateBookAnalysis = async (bookTitle: string): Promise<Book | null> => 
     console.log('📡 API Configuration:');
     console.log('- URL:', OPENROUTER_API_URL);
     console.log('- Model:', MODEL);
-    console.log('- API Key starts with:', OPENROUTER_API_KEY.substring(0, 15) + '...');
+    console.log('- API Key available:', OPENROUTER_API_KEY ? 'Yes' : 'No');
+
+    // Check if API key is available
+    if (!OPENROUTER_API_KEY) {
+        console.error('❌ OpenRouter API key not found. Please set REACT_APP_OPENROUTER_API_KEY in your .env file');
+        return null;
+    }
 
     try {
         const prompt = `Analyze the book "${bookTitle}" and provide a comprehensive response in the following JSON format:
@@ -29,6 +35,7 @@ const generateBookAnalysis = async (bookTitle: string): Promise<Book | null> => 
   "author": "Author name",
   "publishedYear": year_as_number,
   "genre": "Primary genre",
+  "isbn": "The book's ISBN-13 number (13 digits, no hyphens)",
   "summary": "A comprehensive 2-3 sentence summary of the book's main concepts and value proposition",
   "actionableSteps": [
     {
@@ -46,6 +53,8 @@ Requirements:
 - Chapter references should be specific (e.g., "Chapter 3: The Power of Habit" or "Part 2: The Four Laws")
 - Focus on the most impactful and actionable insights from the book
 - Ensure all 10 steps are unique and valuable
+- Include the correct ISBN-13 number for accurate book identification
+- If ISBN is unknown, leave it as empty string
 
 Please analyze: "${bookTitle}"`;
 
@@ -100,7 +109,13 @@ Please analyze: "${bookTitle}"`;
                 }
             }
 
-            return bookData as Book;
+            // Add cover image URL based on ISBN or title
+            const bookWithCover = {
+                ...bookData,
+                coverImageUrl: generateCoverImageUrl(bookData.isbn, bookData.title)
+            };
+
+            return bookWithCover as Book;
         } catch (parseError) {
             console.error('Failed to parse API response:', parseError);
             console.error('Raw content:', content);
@@ -132,6 +147,8 @@ const fallbackBooks: { [key: string]: Book } = {
         author: 'James Clear',
         publishedYear: 2018,
         genre: 'Self-Help',
+        isbn: '9780735211292',
+        coverImageUrl: 'https://covers.openlibrary.org/b/isbn/9780735211292-L.jpg',
         summary: 'Atomic Habits is a comprehensive guide to building good habits and breaking bad ones. James Clear presents a proven system for improving every day through tiny changes that compound over time. The book emphasizes that small, consistent improvements lead to remarkable results, and provides practical strategies for habit formation based on the four laws of behavior change.',
         actionableSteps: [
             { step: 'Start with habits so small they seem almost ridiculous (2-minute rule)', chapter: 'Chapter 11: Walk Slowly, but Never Backward' },
@@ -151,6 +168,8 @@ const fallbackBooks: { [key: string]: Book } = {
         author: 'Napoleon Hill',
         publishedYear: 1937,
         genre: 'Personal Finance',
+        isbn: '9781585424337',
+        coverImageUrl: 'https://covers.openlibrary.org/b/isbn/9781585424337-L.jpg',
         summary: 'Think and Grow Rich is a classic personal development book based on Hill\'s study of successful individuals. The book outlines 13 principles for achieving wealth and success, emphasizing the power of thought, desire, and persistence. Hill argues that success begins with a burning desire and a definite plan, supported by unwavering faith and persistence.',
         actionableSteps: [
             { step: 'Define your definite major purpose with specific financial goals', chapter: 'Chapter 2: Desire' },
@@ -170,6 +189,8 @@ const fallbackBooks: { [key: string]: Book } = {
         author: 'Stephen R. Covey',
         publishedYear: 1989,
         genre: 'Self-Help',
+        isbn: '9781982137274',
+        coverImageUrl: 'https://covers.openlibrary.org/b/isbn/9781982137274-L.jpg',
         summary: 'Covey presents a principle-centered approach to personal and professional effectiveness. The book introduces seven habits that move individuals from dependence to independence to interdependence. These habits are based on universal principles and focus on character development rather than quick-fix techniques.',
         actionableSteps: [
             { step: 'Be proactive: Focus on what you can control and take responsibility', chapter: 'Habit 1: Be Proactive' },
@@ -284,4 +305,17 @@ const testAPIConnection = async (): Promise<boolean> => {
         }
         return false;
     }
+};
+
+// Helper function to generate cover image URL from ISBN
+const generateCoverImageUrl = (isbn?: string, title?: string): string => {
+    if (isbn && isbn.length >= 10) {
+        // Use ISBN for better accuracy - try multiple sources
+        return `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
+    } else if (title) {
+        // Fallback to title-based search
+        const encodedTitle = encodeURIComponent(title);
+        return `https://covers.openlibrary.org/b/title/${encodedTitle}-L.jpg`;
+    }
+    return '';
 };

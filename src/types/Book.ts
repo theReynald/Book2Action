@@ -8,6 +8,7 @@ export interface Book {
     author: string;
     summary: string;
     actionableSteps: ActionableStep[];
+    coverImageUrl?: string;
     publishedYear?: number;
     genre?: string;
     isbn?: string;
