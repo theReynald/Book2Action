@@ -4,7 +4,8 @@ import SearchBar from './components/SearchBar';
 import BookResult from './components/BookResult';
 import ErrorMessage from './components/ErrorMessage';
 import TrendingBooks from './components/TrendingBooks';
-import { Book, BookSearchResult } from './types/Book';
+import ActionStepDetail from './components/ActionStepDetail';
+import { Book, BookSearchResult, ActionableStep } from './types/Book';
 import { searchBook } from './services/openRouterService';
 import { fetchTrendingBooks } from './services/trendingBooksService';
 
@@ -15,6 +16,7 @@ const App: React.FC = () => {
     const [trendingBooks, setTrendingBooks] = useState<Pick<Book, 'title' | 'author' | 'coverImageUrl' | 'isbn'>[]>([]);
     const [isTrendingLoading, setIsTrendingLoading] = useState(false);
     const [searchInputRef, setSearchInputRef] = useState<HTMLInputElement | null>(null);
+    const [selectedAction, setSelectedAction] = useState<ActionableStep | null>(null);
     // Use localStorage to persist theme preference
     const [isDarkMode, setIsDarkMode] = useState(() => {
         const savedTheme = localStorage.getItem('theme');
@@ -89,22 +91,32 @@ const App: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    };
-
-    const handleSearchFocus = () => {
+    };    const handleSearchFocus = () => {
         // Reset to home state when clicking the title
         setCurrentBook(null);
         setError(null);
-
+        setSelectedAction(null);
+        
         // Focus the search input if available
         if (searchInputRef) {
             searchInputRef.focus();
         }
     };
-
+    
     const handleRetry = () => {
         setError(null);
         setCurrentBook(null);
+        setSelectedAction(null);
+    };
+    
+    const handleActionSelect = (action: ActionableStep) => {
+        setSelectedAction(action);
+        window.scrollTo(0, 0);
+    };
+    
+    const handleBackToBook = () => {
+        setSelectedAction(null);
+        window.scrollTo(0, 0);
     };
 
     return (
@@ -123,7 +135,7 @@ const App: React.FC = () => {
                     setInputRef={setSearchInputRef}
                 />
 
-                {!currentBook && !error && !isLoading && trendingBooks.length > 0 && (
+                {!currentBook && !selectedAction && !error && !isLoading && trendingBooks.length > 0 && (
                     <TrendingBooks
                         books={trendingBooks}
                         onBookSelect={handleSearch}
@@ -137,8 +149,21 @@ const App: React.FC = () => {
                     <ErrorMessage message={error} onRetry={handleRetry} />
                 )}
 
-                {currentBook && !error && !isLoading && (
-                    <BookResult book={currentBook} isDarkMode={isDarkMode} />
+                {currentBook && !selectedAction && !error && !isLoading && (
+                    <BookResult 
+                        book={currentBook} 
+                        isDarkMode={isDarkMode} 
+                        onActionSelect={handleActionSelect}
+                    />
+                )}
+                
+                {selectedAction && currentBook && !error && !isLoading && (
+                    <ActionStepDetail
+                        step={selectedAction}
+                        bookTitle={currentBook.title}
+                        onBack={handleBackToBook}
+                        isDarkMode={isDarkMode}
+                    />
                 )}
             </div>
         </div>

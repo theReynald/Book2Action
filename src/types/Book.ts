@@ -1,7 +1,13 @@
+export interface DetailedStepInfo {
+    sentences: string[];
+    keyTakeaway: string;
+}
+
 export interface ActionableStep {
     step: string;
     chapter: string;
     day?: string;
+    details?: DetailedStepInfo;
 }
 
 export interface Book {

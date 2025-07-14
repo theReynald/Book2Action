@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Book } from '../types/Book';
-import { BookOpen, User, Calendar, Tag, CheckCircle, Bookmark, CalendarPlus, Volume2, VolumeX, Pause, Settings, ChevronDown } from 'lucide-react';
+import { Book, ActionableStep } from '../types/Book';
+import { BookOpen, User, Calendar, Tag, CheckCircle, Bookmark, CalendarPlus, Volume2, VolumeX, Pause, Settings, ChevronDown, ExternalLink } from 'lucide-react';
 
 interface BookResultProps {
     book: Book;
     isDarkMode: boolean;
+    onActionSelect?: (action: ActionableStep) => void;
 }
 
 // Helper function to generate Google Calendar link
@@ -51,7 +52,7 @@ const generateAmazonLink = (title: string, author: string, isbn?: string): strin
     }
 };
 
-const BookResult: React.FC<BookResultProps> = ({ book, isDarkMode }) => {
+const BookResult: React.FC<BookResultProps> = ({ book, isDarkMode, onActionSelect }) => {
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
@@ -523,12 +524,20 @@ const BookResult: React.FC<BookResultProps> = ({ book, isDarkMode }) => {
                                     {index + 1}
                                 </div>
                                 <div className="flex-1">
-                                    <p className={`leading-relaxed mb-2 ${isDarkMode ? 'text-white text-opacity-90' : 'text-gray-800'}`}>
-                                        {actionableStep.day && (
-                                            <span className={`font-bold mr-2 ${isDarkMode ? 'text-blue-300' : 'text-blue-600'}`}>{actionableStep.day}:</span>
-                                        )}
-                                        {actionableStep.step}
-                                    </p>
+                                    <div
+                                        onClick={() => onActionSelect && onActionSelect(actionableStep)}
+                                        className={`cursor-pointer flex items-start ${onActionSelect ? 'hover:text-blue-400' : ''} transition-colors`}
+                                    >
+                                        <p className={`leading-relaxed mb-2 flex-grow ${isDarkMode ? 'text-white text-opacity-90' : 'text-gray-800'}`}>
+                                            {actionableStep.day && (
+                                                <span className={`font-bold mr-2 ${isDarkMode ? 'text-blue-300' : 'text-blue-600'}`}>{actionableStep.day}:</span>
+                                            )}
+                                            {actionableStep.step}
+                                            {onActionSelect && (
+                                                <ExternalLink className="inline-block ml-2 w-4 h-4 text-blue-400" />
+                                            )}
+                                        </p>
+                                    </div>
                                     <div className="flex flex-wrap items-center justify-between gap-2">
                                         <div className={`flex items-center text-sm ${isDarkMode ? 'text-white text-opacity-60' : 'text-gray-600'}`}>
                                             <Bookmark className="w-4 h-4 mr-1" />
