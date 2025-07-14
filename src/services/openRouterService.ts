@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { Book, BookSearchResult } from '../types/Book';
+import { isAppropriateTitle } from '../utils/contentFilter';
 
 // OpenRouter configuration
 const OPENROUTER_API_KEY = process.env.REACT_APP_OPENROUTER_API_KEY || '';
@@ -202,6 +203,14 @@ const fallbackBooks: { [key: string]: Book } = {
 
 export const searchBook = async (title: string): Promise<BookSearchResult> => {
     const normalizedTitle = title.toLowerCase().trim();
+
+    // Check if the book title contains inappropriate language
+    if (!isAppropriateTitle(normalizedTitle)) {
+        return {
+            success: false,
+            error: 'Sorry, we cannot process this book title due to our content policy.'
+        };
+    }
 
     // Test API connection on first real search
     if (!normalizedTitle.toLowerCase().includes('7 habits')) {

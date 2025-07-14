@@ -6,9 +6,10 @@ interface TrendingBooksProps {
     books: Pick<Book, 'title' | 'author' | 'coverImageUrl' | 'isbn'>[];
     onBookSelect: (title: string) => void;
     onRefresh: () => void;
+    isLoading?: boolean;
 }
 
-const TrendingBooks: React.FC<TrendingBooksProps> = ({ books, onBookSelect, onRefresh }) => {
+const TrendingBooks: React.FC<TrendingBooksProps> = ({ books, onBookSelect, onRefresh, isLoading = false }) => {
     return (
         <div className="glass-effect rounded-2xl p-8 mb-8">
             <div className="flex items-center justify-between mb-3">
@@ -17,11 +18,12 @@ const TrendingBooks: React.FC<TrendingBooksProps> = ({ books, onBookSelect, onRe
                 </h3>
                 <button
                     onClick={onRefresh}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-white bg-opacity-10 hover:bg-opacity-20 text-white rounded-md transition-colors"
+                    className={`flex items-center gap-1 px-3 py-1.5 ${isLoading ? 'bg-gray-600' : 'bg-white bg-opacity-10 hover:bg-opacity-20'} text-white rounded-md transition-colors`}
                     title="Get new trending books"
+                    disabled={isLoading}
                 >
-                    <RefreshCw size={16} />
-                    <span>Refresh</span>
+                    <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+                    <span>{isLoading ? 'Refreshing...' : 'Refresh'}</span>
                 </button>
             </div>
             <p className="text-white text-opacity-70 text-center mb-6">

@@ -66,15 +66,16 @@ const App: React.FC = () => {
             <div className="container mx-auto">
                 <Header onSearchFocus={() => { }} />
 
+                <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+
                 {!currentBook && !error && !isLoading && trendingBooks.length > 0 && (
                     <TrendingBooks
                         books={trendingBooks}
                         onBookSelect={handleSearch}
                         onRefresh={handleTrendingRefresh}
+                        isLoading={isTrendingLoading}
                     />
                 )}
-
-                <SearchBar onSearch={handleSearch} isLoading={isLoading} />
 
                 {error && (
                     <ErrorMessage message={error} onRetry={handleRetry} />

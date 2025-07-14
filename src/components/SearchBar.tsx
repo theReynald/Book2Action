@@ -17,7 +17,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading }) => {
     };
 
     return (
-        <div className="max-w-3xl mx-auto mb-12 animate-slide-up">
+        <div className="max-w-3xl mx-auto mb-8 animate-slide-up">
             <form onSubmit={handleSubmit} className="relative">
                 <div className="glass-effect rounded-2xl p-6 shadow-2xl">
                     <div className="relative">

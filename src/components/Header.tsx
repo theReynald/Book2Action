@@ -22,10 +22,7 @@ const Header: React.FC<HeaderProps> = ({ onSearchFocus }) => {
                 </div>
             </div>
 
-            <p className="text-lg text-white text-opacity-80 max-w-2xl mx-auto mb-8">
-                Enter any book title to get an AI-powered summary and 10 actionable steps
-                with chapter references to transform learning into action.
-            </p>
+        
 
             <div className="flex justify-center space-x-8 text-white text-opacity-70">
                 <div className="flex items-center">
