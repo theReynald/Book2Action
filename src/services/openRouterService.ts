@@ -1,0 +1,287 @@
+import axios from 'axios';
+import { Book, BookSearchResult } from '../types/Book';
+
+// OpenRouter configuration
+const OPENROUTER_API_KEY = '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';
+const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const MODEL = 'x-ai/grok-4';
+
+interface OpenRouterResponse {
+    choices: Array<{
+        message: {
+            content: string;
+        };
+    }>;
+}
+
+const generateBookAnalysis = async (bookTitle: string): Promise<Book | null> => {
+    console.log(`🔍 Starting AI analysis for: "${bookTitle}"`);
+    console.log('📡 API Configuration:');
+    console.log('- URL:', OPENROUTER_API_URL);
+    console.log('- Model:', MODEL);
+    console.log('- API Key starts with:', OPENROUTER_API_KEY.substring(0, 15) + '...');
+
+    try {
+        const prompt = `Analyze the book "${bookTitle}" and provide a comprehensive response in the following JSON format:
+
+{
+  "title": "Exact book title",
+  "author": "Author name",
+  "publishedYear": year_as_number,
+  "genre": "Primary genre",
+  "summary": "A comprehensive 2-3 sentence summary of the book's main concepts and value proposition",
+  "actionableSteps": [
+    {
+      "step": "Specific actionable step that readers can implement",
+      "chapter": "Chapter or section where this concept is primarily discussed"
+    }
+    // Provide exactly 10 actionable steps
+  ]
+}
+
+Requirements:
+- If the book doesn't exist or you're not familiar with it, return null
+- The summary should be concise but comprehensive
+- Each actionable step should be practical and implementable
+- Chapter references should be specific (e.g., "Chapter 3: The Power of Habit" or "Part 2: The Four Laws")
+- Focus on the most impactful and actionable insights from the book
+- Ensure all 10 steps are unique and valuable
+
+Please analyze: "${bookTitle}"`;
+
+        const response = await axios.post<OpenRouterResponse>(
+            OPENROUTER_API_URL,
+            {
+                model: MODEL,
+                messages: [
+                    {
+                        role: 'user',
+                        content: prompt
+                    }
+                ],
+                temperature: 0.7,
+                max_tokens: 2000
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        const content = response.data.choices[0]?.message?.content;
+        if (!content) {
+            throw new Error('No content received from API');
+        }
+
+        // Try to parse the JSON response
+        try {
+            const bookData = JSON.parse(content);
+
+            // Validate the response structure
+            if (!bookData || typeof bookData !== 'object') {
+                throw new Error('Invalid response format');
+            }
+
+            // Ensure we have the required fields
+            if (!bookData.title || !bookData.author || !bookData.summary || !Array.isArray(bookData.actionableSteps)) {
+                throw new Error('Missing required fields in response');
+            }
+
+            // Validate actionable steps format
+            if (bookData.actionableSteps.length !== 10) {
+                throw new Error('Expected exactly 10 actionable steps');
+            }
+
+            for (const step of bookData.actionableSteps) {
+                if (!step.step || !step.chapter) {
+                    throw new Error('Invalid actionable step format');
+                }
+            }
+
+            return bookData as Book;
+        } catch (parseError) {
+            console.error('Failed to parse API response:', parseError);
+            console.error('Raw content:', content);
+
+            // If JSON parsing fails, try to extract information manually
+            return null;
+        }
+    } catch (error) {
+        console.error('Error calling OpenRouter API:', error);
+
+        // Log more specific error details
+        if (axios.isAxiosError(error)) {
+            console.error('API Error Details:');
+            console.error('Status:', error.response?.status);
+            console.error('Status Text:', error.response?.statusText);
+            console.error('Response Data:', error.response?.data);
+            console.error('Request URL:', error.config?.url);
+            console.error('Request Headers:', error.config?.headers);
+        }
+
+        return null;
+    }
+};
+
+// Fallback data for when API fails or for popular books
+const fallbackBooks: { [key: string]: Book } = {
+    'atomic habits': {
+        title: 'Atomic Habits',
+        author: 'James Clear',
+        publishedYear: 2018,
+        genre: 'Self-Help',
+        summary: 'Atomic Habits is a comprehensive guide to building good habits and breaking bad ones. James Clear presents a proven system for improving every day through tiny changes that compound over time. The book emphasizes that small, consistent improvements lead to remarkable results, and provides practical strategies for habit formation based on the four laws of behavior change.',
+        actionableSteps: [
+            { step: 'Start with habits so small they seem almost ridiculous (2-minute rule)', chapter: 'Chapter 11: Walk Slowly, but Never Backward' },
+            { step: 'Stack new habits onto existing ones using habit stacking', chapter: 'Chapter 5: The Best Way to Start a New Habit' },
+            { step: 'Design your environment to make good habits obvious and bad habits invisible', chapter: 'Chapter 6: Motivation Is Overrated; Environment Often Matters More' },
+            { step: 'Track your habits daily using a simple habit tracker', chapter: 'Chapter 16: How to Stick with Good Habits Every Day' },
+            { step: 'Focus on identity-based habits: "I am the type of person who..."', chapter: 'Chapter 2: How Your Habits Shape Your Identity' },
+            { step: 'Use the two-day rule: never miss twice in a row', chapter: 'Chapter 15: The Cardinal Rule of Behavior Change' },
+            { step: 'Celebrate small wins immediately after completing a habit', chapter: 'Chapter 15: The Cardinal Rule of Behavior Change' },
+            { step: 'Make bad habits difficult by increasing friction', chapter: 'Chapter 12: The Law of Least Effort' },
+            { step: 'Find an accountability partner or join a community', chapter: 'Chapter 17: How an Accountability Partner Can Change Everything' },
+            { step: 'Review and adjust your habits monthly based on what\'s working', chapter: 'Chapter 20: The Downside of Creating Good Habits' }
+        ]
+    },
+    'think and grow rich': {
+        title: 'Think and Grow Rich',
+        author: 'Napoleon Hill',
+        publishedYear: 1937,
+        genre: 'Personal Finance',
+        summary: 'Think and Grow Rich is a classic personal development book based on Hill\'s study of successful individuals. The book outlines 13 principles for achieving wealth and success, emphasizing the power of thought, desire, and persistence. Hill argues that success begins with a burning desire and a definite plan, supported by unwavering faith and persistence.',
+        actionableSteps: [
+            { step: 'Define your definite major purpose with specific financial goals', chapter: 'Chapter 2: Desire' },
+            { step: 'Develop burning desire by writing down exactly what you want', chapter: 'Chapter 2: Desire' },
+            { step: 'Build unwavering faith through auto-suggestion and visualization', chapter: 'Chapter 3: Faith' },
+            { step: 'Acquire specialized knowledge in your chosen field', chapter: 'Chapter 5: Specialized Knowledge' },
+            { step: 'Use your imagination to create detailed plans for achieving your goals', chapter: 'Chapter 6: Imagination' },
+            { step: 'Make quick, firm decisions and stick to them', chapter: 'Chapter 8: Decision' },
+            { step: 'Develop persistence by never giving up on your major purpose', chapter: 'Chapter 9: Persistence' },
+            { step: 'Surround yourself with a mastermind group of like-minded individuals', chapter: 'Chapter 10: Power of the Master Mind' },
+            { step: 'Transform your sexual energy into creative and productive outlets', chapter: 'Chapter 11: The Mystery of Sex Transmutation' },
+            { step: 'Listen to your subconscious mind and act on hunches and inspirations', chapter: 'Chapter 12: The Subconscious Mind' }
+        ]
+    },
+    'the 7 habits of highly effective people': {
+        title: 'The 7 Habits of Highly Effective People',
+        author: 'Stephen R. Covey',
+        publishedYear: 1989,
+        genre: 'Self-Help',
+        summary: 'Covey presents a principle-centered approach to personal and professional effectiveness. The book introduces seven habits that move individuals from dependence to independence to interdependence. These habits are based on universal principles and focus on character development rather than quick-fix techniques.',
+        actionableSteps: [
+            { step: 'Be proactive: Focus on what you can control and take responsibility', chapter: 'Habit 1: Be Proactive' },
+            { step: 'Begin with the end in mind: Define your personal mission statement', chapter: 'Habit 2: Begin with the End in Mind' },
+            { step: 'Put first things first: Prioritize important over urgent tasks', chapter: 'Habit 3: Put First Things First' },
+            { step: 'Think win-win: Seek mutual benefit in all interactions', chapter: 'Habit 4: Think Win-Win' },
+            { step: 'Seek first to understand, then to be understood: Practice empathetic listening', chapter: 'Habit 5: Seek First to Understand, Then to Be Understood' },
+            { step: 'Synergize: Value differences and work collaboratively', chapter: 'Habit 6: Synergize' },
+            { step: 'Sharpen the saw: Continuously improve in all four dimensions of life', chapter: 'Habit 7: Sharpen the Saw' },
+            { step: 'Practice daily self-reflection and planning', chapter: 'Part 4: Renewal' },
+            { step: 'Create weekly and monthly reviews of your progress', chapter: 'Habit 3: Put First Things First' },
+            { step: 'Align your actions with your values and principles', chapter: 'Part 1: Paradigms and Principles' }
+        ]
+    }
+};
+
+export const searchBook = async (title: string): Promise<BookSearchResult> => {
+    const normalizedTitle = title.toLowerCase().trim();
+
+    // Test API connection on first real search
+    if (!normalizedTitle.toLowerCase().includes('7 habits')) {
+        console.log('Testing API connection before search...');
+        await testAPIConnection();
+    }
+
+    try {
+        // First check if we have fallback data for popular books
+        if (fallbackBooks[normalizedTitle]) {
+            return {
+                success: true,
+                book: fallbackBooks[normalizedTitle]
+            };
+        }
+
+        // Check for partial matches in fallback data
+        const partialMatch = Object.keys(fallbackBooks).find(key =>
+            key.includes(normalizedTitle) || normalizedTitle.includes(key)
+        );
+
+        if (partialMatch) {
+            return {
+                success: true,
+                book: fallbackBooks[partialMatch]
+            };
+        }
+
+        // If not in fallback data, use AI to generate analysis
+        console.log(`🤖 Generating AI analysis for: ${title}`);
+        console.log('📊 Starting OpenRouter API call...');
+        const aiGeneratedBook = await generateBookAnalysis(title);
+
+        if (aiGeneratedBook) {
+            return {
+                success: true,
+                book: aiGeneratedBook
+            };
+        }
+
+        // If AI fails, return error
+        return {
+            success: false,
+            error: `Sorry, we couldn't find or analyze "${title}". Please try a different book title or check the spelling.`
+        };
+
+    } catch (error) {
+        console.error('Error in searchBook:', error);
+        return {
+            success: false,
+            error: 'An error occurred while searching for the book. Please try again.'
+        };
+    }
+};
+
+// Test function to verify API connectivity
+const testAPIConnection = async (): Promise<boolean> => {
+    try {
+        console.log('Testing OpenRouter API connection...');
+        console.log('API Key (first 20 chars):', OPENROUTER_API_KEY.substring(0, 20) + '...');
+        console.log('API URL:', OPENROUTER_API_URL);
+        console.log('Model:', MODEL);
+
+        const response = await axios.post<OpenRouterResponse>(
+            OPENROUTER_API_URL,
+            {
+                model: MODEL,
+                messages: [
+                    {
+                        role: 'user',
+                        content: 'Hello, this is a test message. Please respond with just "API working".'
+                    }
+                ],
+                temperature: 0.7,
+                max_tokens: 50
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        console.log('API Test Response:', response.data);
+        return true;
+    } catch (error) {
+        console.error('API Test Failed:', error);
+        if (axios.isAxiosError(error)) {
+            console.error('Test Error Details:');
+            console.error('Status:', error.response?.status);
+            console.error('Status Text:', error.response?.statusText);
+            console.error('Response Data:', error.response?.data);
+        }
+        return false;
+    }
+};

@@ -38,7 +38,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading }) => {
                             {isLoading ? (
                                 <>
                                     <Loader2 className="w-4 h-4 animate-spin" />
-                                    <span>Searching</span>
+                                    <span>Analyzing...</span>
                                 </>
                             ) : (
                                 <span>Search</span>
@@ -50,7 +50,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading }) => {
 
             <div className="mt-4 text-center">
                 <p className="text-white text-opacity-70 text-sm">
-                    Try: "Atomic Habits", "Think and Grow Rich", or "The 7 Habits of Highly Effective People"
+                    {isLoading ?
+                        "🤖 AI is analyzing the book and generating actionable insights..." :
+                        "Try any book title - AI will analyze it and create actionable steps!"
+                    }
                 </p>
             </div>
         </div>
