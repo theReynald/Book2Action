@@ -17,7 +17,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading }) => {
     };
 
     return (
-        <div className="max-w-2xl mx-auto mb-12 animate-slide-up">
+        <div className="max-w-3xl mx-auto mb-12 animate-slide-up">
             <form onSubmit={handleSubmit} className="relative">
                 <div className="glass-effect rounded-2xl p-6 shadow-2xl">
                     <div className="relative">
@@ -26,7 +26,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading }) => {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Enter a book title (e.g., 'Atomic Habits', 'Think and Grow Rich')"
-                            className="w-full pl-12 pr-20 py-4 text-lg bg-white bg-opacity-90 rounded-xl border-2 border-transparent focus:border-white focus:outline-none transition-all duration-300 placeholder-gray-500"
+                            className="w-full pl-12 pr-28 py-4 text-lg bg-white bg-opacity-90 rounded-xl border-2 border-transparent focus:border-white focus:outline-none transition-all duration-300 placeholder-gray-500"
                             disabled={isLoading}
                         />
                         <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-gray-400" />

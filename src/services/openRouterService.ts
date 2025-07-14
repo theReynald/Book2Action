@@ -313,3 +313,14 @@ const generateCoverImageUrl = (isbn?: string, title?: string): string => {
     }
     return '';
 };
+
+// Function to get trending books for the homepage
+export const getTrendingBooks = (): Pick<Book, 'title' | 'author' | 'coverImageUrl' | 'isbn'>[] => {
+    // Extract and return all fallback books as trending books
+    return Object.values(fallbackBooks).map(book => ({
+        title: book.title,
+        author: book.author,
+        coverImageUrl: book.coverImageUrl,
+        isbn: book.isbn
+    }));
+};
