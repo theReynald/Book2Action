@@ -21,7 +21,7 @@ A modern React application that transforms books into actionable insights.
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/theReynald/Book2Action.git
 cd Book2Action
 ```
 
@@ -35,7 +35,7 @@ npm install
 npm start
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+4. Open [http://localhost:3001](http://localhost:3001) to view it in the browser.
 
 ## Available Scripts
 
