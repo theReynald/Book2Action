@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Book } from '../types/Book';
-import { BookOpen, User, Calendar, Tag, CheckCircle, Bookmark, CalendarPlus } from 'lucide-react';
+import { BookOpen, User, Calendar, Tag, CheckCircle, Bookmark, CalendarPlus, Volume2, VolumeX, Pause, Settings, ChevronDown } from 'lucide-react';
 
 interface BookResultProps {
     book: Book;
@@ -40,6 +40,215 @@ const generateCalendarLink = (actionStep: string, bookTitle: string, day: string
 };
 
 const BookResult: React.FC<BookResultProps> = ({ book }) => {
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    const [isPaused, setIsPaused] = useState(false);
+    const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+    const [selectedVoice, setSelectedVoice] = useState<string>('');
+    const [speechRate, setSpeechRate] = useState<number>(1.0);
+    const [voiceMenuOpen, setVoiceMenuOpen] = useState<boolean>(false);
+    const voiceMenuRef = useRef<HTMLDivElement>(null);
+    const settingsButtonRef = useRef<HTMLButtonElement>(null);
+
+    // Click outside handler for voice menu
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (voiceMenuRef.current && !voiceMenuRef.current.contains(event.target as Node)) {
+                setVoiceMenuOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
+    // Load voices when component mounts
+    React.useEffect(() => {
+        const loadVoices = () => {
+            const availableVoices = window.speechSynthesis.getVoices();
+            setVoices(availableVoices);
+
+            // Set default selected voice (prefer premium voices)
+            const premiumVoice = availableVoices.find(v =>
+                (v.name.includes('Premium') || v.name.includes('Enhanced') ||
+                    v.name.includes('Neural') || v.name.includes('Wavenet') ||
+                    v.name.includes('Siri') || v.name.includes('Samantha') ||
+                    v.name.includes('Daniel') || v.name.includes('Karen')) &&
+                v.lang.includes('en')
+            );
+
+            if (premiumVoice) {
+                setSelectedVoice(premiumVoice.name);
+                console.log('Selected premium voice:', premiumVoice.name);
+            } else {
+                // Fallback to any English voice
+                const englishVoice = availableVoices.find(v => v.lang.includes('en'));
+                if (englishVoice) {
+                    setSelectedVoice(englishVoice.name);
+                    console.log('Selected English voice:', englishVoice.name);
+                }
+            }
+
+            // Log available voices for debugging
+            console.log('Available voices:', availableVoices.map(v => `${v.name} (${v.lang})`));
+        };
+
+        // Load voices right away
+        loadVoices();
+
+        // Chrome loads voices asynchronously
+        if (window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+        }
+
+        // Cleanup on unmount
+        return () => {
+            try {
+                // Always cancel any ongoing speech when unmounting
+                window.speechSynthesis.cancel();
+            } catch (error) {
+                console.log('Error when cleaning up speech synthesis:', error);
+                // Don't show an alert during cleanup
+            }
+        };
+    }, []);
+
+    // Function to handle text-to-speech
+    const handleReadAloud = () => {
+        if (!window.speechSynthesis) {
+            alert('Sorry, your browser does not support text-to-speech functionality.');
+            return;
+        }
+
+        if (isSpeaking) {
+            if (isPaused) {
+                window.speechSynthesis.resume();
+                setIsPaused(false);
+            } else {
+                window.speechSynthesis.pause();
+                setIsPaused(true);
+            }
+            return;
+        }
+
+        // Cancel any ongoing speech
+        window.speechSynthesis.cancel();
+
+        // Create text to be read
+        let textToRead = `Book: ${book.title} by ${book.author}.\n\nSummary: ${book.summary}\n\nHere is your 7-Day Action Plan:\n`;
+
+        book.actionableSteps.forEach((step, index) => {
+            textToRead += `${step.day}: ${step.step}. From ${step.chapter}.\n`;
+        });
+
+        const utterance = new SpeechSynthesisUtterance(textToRead);
+
+        // Set the selected voice
+        if (voices.length > 0 && selectedVoice) {
+            const voice = voices.find(v => v.name === selectedVoice);
+            if (voice) {
+                utterance.voice = voice;
+                console.log('Using voice:', voice.name);
+            }
+        }
+
+        // Adjust speech parameters
+        utterance.rate = speechRate;
+        utterance.pitch = 1.0;
+
+        // Add event listeners
+        utterance.onstart = () => {
+            setIsSpeaking(true);
+            setIsPaused(false);
+        };
+
+        utterance.onend = () => {
+            setIsSpeaking(false);
+            setIsPaused(false);
+        };
+
+        utterance.onerror = (event) => {
+            console.log('Speech synthesis error:', event);
+
+            // Only show error if speech was actually in progress
+            // This prevents error messages when deliberately stopping
+            if (isSpeaking) {
+                // Check if this is a user-initiated cancellation
+                const isCancellationError =
+                    event.error === 'canceled' ||
+                    event.error === 'interrupted' ||
+                    (event as any).name === 'CancelEvent';
+
+                if (!isCancellationError) {
+                    alert('An error occurred while reading the text.');
+                }
+            }
+
+            setIsSpeaking(false);
+            setIsPaused(false);
+        };
+
+        // Start speaking
+        window.speechSynthesis.speak(utterance);
+    };
+
+    // Function to stop reading
+    const handleStopReading = () => {
+        try {
+            // Set state first to prevent the error handler from showing an alert
+            setIsSpeaking(false);
+            setIsPaused(false);
+
+            // Then cancel speech - this might trigger an error but we've already set isSpeaking to false
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+        } catch (error) {
+            console.log('Error when stopping speech synthesis:', error);
+            // No need to show an alert as this is an expected operation
+        }
+    };
+
+    // Function to test a voice
+    const testSelectedVoice = () => {
+        if (!window.speechSynthesis) return;
+
+        try {
+            // Safely cancel any ongoing speech first
+            window.speechSynthesis.cancel();
+
+            const testUtterance = new SpeechSynthesisUtterance(
+                `This is a test of the selected voice for ${book.title}.`
+            );
+
+            // Set the selected voice
+            if (voices.length > 0 && selectedVoice) {
+                const voice = voices.find(v => v.name === selectedVoice);
+                if (voice) {
+                    testUtterance.voice = voice;
+                    console.log('Testing voice:', voice.name);
+                }
+            }
+
+            // Set speech parameters
+            testUtterance.rate = speechRate;
+            testUtterance.pitch = 1.0;
+
+            // Add error handler that doesn't show an alert
+            testUtterance.onerror = (event) => {
+                console.log('Test voice error:', event);
+                // Don't show an alert for the test voice
+            };
+
+            // Speak the test phrase
+            window.speechSynthesis.speak(testUtterance);
+        } catch (error) {
+            console.log('Error during voice test:', error);
+            // Don't show an alert for errors during voice test
+        }
+    };
+
     return (
         <div className="max-w-4xl mx-auto animate-fade-in">
             {/* Book Header */}
@@ -124,10 +333,136 @@ const BookResult: React.FC<BookResultProps> = ({ book }) => {
 
             {/* Summary Section */}
             <div className="glass-effect rounded-2xl p-8 mb-8 shadow-2xl">
-                <h3 className="text-2xl font-bold text-white mb-4 flex items-center">
-                    <BookOpen className="w-6 h-6 mr-3" />
-                    Summary
-                </h3>
+                <div className="flex justify-between items-center mb-4 relative">
+                    <h3 className="text-2xl font-bold text-white flex items-center">
+                        <BookOpen className="w-6 h-6 mr-3" />
+                        Summary
+                    </h3>
+                    <div className="flex gap-3 items-center relative z-50">
+                        {/* Read Aloud Buttons First */}
+                        {isSpeaking ? (
+                            <>
+                                <button
+                                    onClick={isPaused ? handleReadAloud : handleReadAloud}
+                                    className="flex items-center gap-2 px-3 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-md transition-colors"
+                                    title={isPaused ? "Resume reading" : "Pause reading"}
+                                >
+                                    {isPaused ? (
+                                        <>
+                                            <Volume2 size={18} />
+                                            <span>Resume</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Pause size={18} />
+                                            <span>Pause</span>
+                                        </>
+                                    )}
+                                </button>
+                                <button
+                                    onClick={handleStopReading}
+                                    className="flex items-center gap-2 px-3 py-2 bg-red-700 hover:bg-red-800 text-white rounded-md transition-colors"
+                                    title="Stop reading"
+                                >
+                                    <VolumeX size={18} />
+                                    <span>Stop</span>
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <button
+                                    onClick={handleReadAloud}
+                                    className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                                    title="Read the summary and action plan out loud"
+                                >
+                                    <Volume2 size={18} />
+                                    <span>Read Aloud</span>
+                                </button>
+                                {/* Settings Gear Icon */}
+                                <button
+                                    ref={settingsButtonRef}
+                                    onClick={() => setVoiceMenuOpen(!voiceMenuOpen)}
+                                    className="flex items-center justify-center p-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md transition-colors"
+                                    title="Voice settings"
+                                >
+                                    <Settings size={18} />
+                                </button>
+                            </>
+                        )}
+
+                        {/* Voice Settings Dropdown */}
+                        {voiceMenuOpen && (
+                            <div
+                                ref={voiceMenuRef}
+                                className="absolute bottom-full right-0 mb-2 p-4 bg-gray-800 rounded-lg shadow-xl z-[100] w-72"
+                                style={{ maxHeight: '80vh', overflowY: 'auto' }}
+                            >
+                                <div className="mb-4">
+                                    <label className="block text-white text-sm mb-2" htmlFor="voice-select">
+                                        Select Voice
+                                    </label>
+                                    <select
+                                        id="voice-select"
+                                        value={selectedVoice}
+                                        onChange={(e) => setSelectedVoice(e.target.value)}
+                                        className="w-full bg-gray-700 text-white px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        {voices
+                                            .filter(voice => voice.lang.includes('en'))
+                                            .sort((a, b) => {
+                                                // Sort premium voices first
+                                                const aPremium = a.name.includes('Premium') ||
+                                                    a.name.includes('Enhanced') ||
+                                                    a.name.includes('Neural') ||
+                                                    a.name.includes('Wavenet');
+                                                const bPremium = b.name.includes('Premium') ||
+                                                    b.name.includes('Enhanced') ||
+                                                    b.name.includes('Neural') ||
+                                                    b.name.includes('Wavenet');
+
+                                                if (aPremium && !bPremium) return -1;
+                                                if (!aPremium && bPremium) return 1;
+                                                return a.name.localeCompare(b.name);
+                                            })
+                                            .map(voice => (
+                                                <option key={voice.name} value={voice.name}>
+                                                    {voice.name} ({voice.lang})
+                                                </option>
+                                            ))
+                                        }
+                                    </select>
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-white text-sm mb-2">
+                                        Speech Rate: {speechRate.toFixed(1)}x
+                                    </label>
+                                    <input
+                                        type="range"
+                                        min="0.5"
+                                        max="2"
+                                        step="0.1"
+                                        value={speechRate}
+                                        onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
+                                        className="w-full"
+                                    />
+                                </div>
+
+                                <button
+                                    onClick={testSelectedVoice}
+                                    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors mt-2"
+                                >
+                                    <Volume2 size={16} />
+                                    <span>Test Voice</span>
+                                </button>
+
+                                <div className="text-xs text-gray-400 mt-2">
+                                    <p>Premium voices offer better quality but may not be available on all devices.</p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
                 <p className="text-white text-opacity-90 leading-relaxed text-lg">
                     {book.summary}
                 </p>
