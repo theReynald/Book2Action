@@ -190,7 +190,7 @@ const fallbackBooks: { [key: string]: Book } = {
         publishedYear: 1989,
         genre: 'Self-Help',
         isbn: '9781982137274',
-        coverImageUrl: 'https://covers.openlibrary.org/b/isbn/9781982137274-L.jpg',
+        coverImageUrl: 'https://books.google.com/books/content?id=ISBN:9781982137274&printsec=frontcover&img=1&zoom=1&source=gbs_api',
         summary: 'Covey presents a principle-centered approach to personal and professional effectiveness. The book introduces seven habits that move individuals from dependence to independence to interdependence. These habits are based on universal principles and focus on character development rather than quick-fix techniques.',
         actionableSteps: [
             { step: 'Be proactive: Focus on what you can control and take responsibility', chapter: 'Habit 1: Be Proactive' },
@@ -310,10 +310,11 @@ const testAPIConnection = async (): Promise<boolean> => {
 // Helper function to generate cover image URL from ISBN
 const generateCoverImageUrl = (isbn?: string, title?: string): string => {
     if (isbn && isbn.length >= 10) {
-        // Use ISBN for better accuracy - try multiple sources
+        // Use ISBN for better accuracy - always prefer ISBN search
+        // ISBN is more reliable and specific than title search
         return `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
     } else if (title) {
-        // Fallback to title-based search
+        // Fallback to title-based search if no ISBN available
         const encodedTitle = encodeURIComponent(title);
         return `https://covers.openlibrary.org/b/title/${encodedTitle}-L.jpg`;
     }

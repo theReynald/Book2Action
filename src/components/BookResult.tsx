@@ -22,17 +22,35 @@ const BookResult: React.FC<BookResultProps> = ({ book }) => {
                                 onError={(e) => {
                                     const img = e.currentTarget;
                                     const currentSrc = img.src;
+                                    console.log('Image failed to load:', currentSrc);
 
-                                    // Try alternative sources if available
+                                    // Comprehensive fallback strategy
                                     if (book.isbn && currentSrc.includes('openlibrary.org/b/isbn/')) {
-                                        // Try Google Books as fallback
+                                        // Fallback 1: Try Google Books using ISBN
+                                        console.log('Trying Google Books API fallback with ISBN');
+                                        img.src = `https://books.google.com/books/content?id=ISBN:${book.isbn}&printsec=frontcover&img=1&zoom=1&source=gbs_api`;
+                                    }
+                                    else if (book.isbn && currentSrc.includes('books.google.com') && currentSrc.includes('ISBN:')) {
+                                        // Fallback 2: Try Google Books ID lookup
+                                        console.log('Trying Google Books API fallback with direct ID');
                                         img.src = `https://books.google.com/books/content?id=${book.isbn}&printsec=frontcover&img=1&zoom=1&source=gbs_api`;
-                                    } else if (book.isbn && currentSrc.includes('books.google.com')) {
-                                        // Try title-based as final fallback
+                                    }
+                                    else if (currentSrc.includes('books.google.com')) {
+                                        // Fallback 3: Try title-based OpenLibrary search
+                                        console.log('Trying OpenLibrary title-based fallback');
                                         const encodedTitle = encodeURIComponent(book.title);
                                         img.src = `https://covers.openlibrary.org/b/title/${encodedTitle}-L.jpg`;
-                                    } else {
-                                        // Show fallback icon
+                                    }
+                                    else if (currentSrc.includes('openlibrary.org/b/title/')) {
+                                        // Fallback 4: Try Amazon as final external source
+                                        console.log('Trying Amazon lookup fallback');
+                                        // Format ASIN/ISBN for Amazon
+                                        const amazonId = book.isbn || encodeURIComponent(book.title);
+                                        img.src = `https://images-na.ssl-images-amazon.com/images/P/${amazonId}.01._SX450_SY635_SCLZZZZZZZ_.jpg`;
+                                    }
+                                    else {
+                                        // Final fallback: Show icon placeholder
+                                        console.log('All image sources failed, showing placeholder');
                                         img.style.display = 'none';
                                         const fallback = img.nextElementSibling as HTMLElement;
                                         if (fallback) fallback.style.display = 'flex';
