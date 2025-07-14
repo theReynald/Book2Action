@@ -1,10 +1,43 @@
 import React from 'react';
 import { Book } from '../types/Book';
-import { BookOpen, User, Calendar, Tag, CheckCircle, Bookmark } from 'lucide-react';
+import { BookOpen, User, Calendar, Tag, CheckCircle, Bookmark, CalendarPlus } from 'lucide-react';
 
 interface BookResultProps {
     book: Book;
 }
+
+// Helper function to generate Google Calendar link
+const generateCalendarLink = (actionStep: string, bookTitle: string, day: string): string => {
+    // Get next occurrence of the specified day
+    const today = new Date();
+    const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayIndex = daysOfWeek.findIndex(d => d === day);
+    
+    if (dayIndex === -1) return '#'; // Invalid day name
+    
+    const targetDate = new Date(today);
+    const todayDayIndex = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    
+    // Calculate days to add to get to the target day
+    let daysToAdd = dayIndex - todayDayIndex;
+    if (daysToAdd <= 0) daysToAdd += 7; // If the day has passed this week, get next week's occurrence
+    
+    targetDate.setDate(today.getDate() + daysToAdd);
+    
+    // Format for Google Calendar URL
+    const year = targetDate.getFullYear();
+    const month = (targetDate.getMonth() + 1).toString().padStart(2, '0');
+    const date = targetDate.getDate().toString().padStart(2, '0');
+    
+    // Create an event that lasts 1 hour
+    const startDate = `${year}${month}${date}`;
+    
+    // Encode the event details
+    const details = encodeURIComponent(`Action step from "${bookTitle}"`);
+    const text = encodeURIComponent(actionStep);
+    
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&details=${details}&dates=${startDate}T090000/${startDate}T100000&ctz=local`;
+};
 
 const BookResult: React.FC<BookResultProps> = ({ book }) => {
     return (
@@ -123,9 +156,23 @@ const BookResult: React.FC<BookResultProps> = ({ book }) => {
                                         )}
                                         {actionableStep.step}
                                     </p>
-                                    <div className="flex items-center text-white text-opacity-60 text-sm">
-                                        <Bookmark className="w-4 h-4 mr-1" />
-                                        <span className="italic">{actionableStep.chapter}</span>
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <div className="flex items-center text-white text-opacity-60 text-sm">
+                                            <Bookmark className="w-4 h-4 mr-1" />
+                                            <span className="italic">{actionableStep.chapter}</span>
+                                        </div>
+                                        {actionableStep.day && (
+                                            <a 
+                                                href={generateCalendarLink(actionableStep.step, book.title, actionableStep.day)}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center text-sm text-blue-300 hover:text-blue-100 transition-colors"
+                                                title={`Add "${actionableStep.day}: ${actionableStep.step.substring(0, 30)}..." to your calendar`}
+                                            >
+                                                <CalendarPlus className="w-4 h-4 mr-1" />
+                                                <span>Add to Calendar</span>
+                                            </a>
+                                        )}
                                     </div>
                                 </div>
                             </div>
