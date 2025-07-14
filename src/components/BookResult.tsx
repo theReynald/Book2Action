@@ -1,6 +1,6 @@
 import React from 'react';
 import { Book } from '../types/Book';
-import { BookOpen, User, Calendar, Tag, CheckCircle } from 'lucide-react';
+import { BookOpen, User, Calendar, Tag, CheckCircle, Bookmark } from 'lucide-react';
 
 interface BookResultProps {
     book: Book;
@@ -57,7 +57,7 @@ const BookResult: React.FC<BookResultProps> = ({ book }) => {
                     10 Actionable Steps
                 </h3>
                 <div className="grid gap-4">
-                    {book.actionableSteps.map((step, index) => (
+                    {book.actionableSteps.map((actionableStep, index) => (
                         <div
                             key={index}
                             className="bg-white bg-opacity-10 rounded-xl p-4 backdrop-blur-sm border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300"
@@ -66,9 +66,15 @@ const BookResult: React.FC<BookResultProps> = ({ book }) => {
                                 <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-full w-8 h-8 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                                     {index + 1}
                                 </div>
-                                <p className="text-white text-opacity-90 leading-relaxed">
-                                    {step}
-                                </p>
+                                <div className="flex-1">
+                                    <p className="text-white text-opacity-90 leading-relaxed mb-2">
+                                        {actionableStep.step}
+                                    </p>
+                                    <div className="flex items-center text-white text-opacity-60 text-sm">
+                                        <Bookmark className="w-4 h-4 mr-1" />
+                                        <span className="italic">{actionableStep.chapter}</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     ))}
