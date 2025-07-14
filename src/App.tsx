@@ -14,6 +14,41 @@ const App: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [trendingBooks, setTrendingBooks] = useState<Pick<Book, 'title' | 'author' | 'coverImageUrl' | 'isbn'>[]>([]);
     const [isTrendingLoading, setIsTrendingLoading] = useState(false);
+    const [searchInputRef, setSearchInputRef] = useState<HTMLInputElement | null>(null);
+    // Use localStorage to persist theme preference
+    const [isDarkMode, setIsDarkMode] = useState(() => {
+        const savedTheme = localStorage.getItem('theme');
+        return savedTheme === 'light' ? false : true; // Default to dark mode if no preference
+    });
+
+    // Function to toggle between light and dark mode
+    const toggleTheme = () => {
+        const newTheme = !isDarkMode;
+        setIsDarkMode(newTheme);
+
+        // Save preference to localStorage
+        localStorage.setItem('theme', newTheme ? 'dark' : 'light');
+
+        // Apply theme class to the body element
+        if (newTheme) {
+            document.body.classList.add('dark-theme');
+            document.body.classList.remove('light-theme');
+        } else {
+            document.body.classList.add('light-theme');
+            document.body.classList.remove('dark-theme');
+        }
+    };
+
+    // Set initial theme class on component mount
+    useEffect(() => {
+        if (isDarkMode) {
+            document.body.classList.add('dark-theme');
+            document.body.classList.remove('light-theme');
+        } else {
+            document.body.classList.add('light-theme');
+            document.body.classList.remove('dark-theme');
+        }
+    }, []);
 
     const loadTrendingBooks = async () => {
         setIsTrendingLoading(true);
@@ -56,6 +91,17 @@ const App: React.FC = () => {
         }
     };
 
+    const handleSearchFocus = () => {
+        // Reset to home state when clicking the title
+        setCurrentBook(null);
+        setError(null);
+
+        // Focus the search input if available
+        if (searchInputRef) {
+            searchInputRef.focus();
+        }
+    };
+
     const handleRetry = () => {
         setError(null);
         setCurrentBook(null);
@@ -64,9 +110,18 @@ const App: React.FC = () => {
     return (
         <div className="min-h-screen py-8 px-4">
             <div className="container mx-auto">
-                <Header onSearchFocus={() => { }} />
+                <Header
+                    onSearchFocus={handleSearchFocus}
+                    isDarkMode={isDarkMode}
+                    toggleTheme={toggleTheme}
+                />
 
-                <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+                <SearchBar
+                    onSearch={handleSearch}
+                    isLoading={isLoading}
+                    isDarkMode={isDarkMode}
+                    setInputRef={setSearchInputRef}
+                />
 
                 {!currentBook && !error && !isLoading && trendingBooks.length > 0 && (
                     <TrendingBooks
@@ -74,6 +129,7 @@ const App: React.FC = () => {
                         onBookSelect={handleSearch}
                         onRefresh={handleTrendingRefresh}
                         isLoading={isTrendingLoading}
+                        isDarkMode={isDarkMode}
                     />
                 )}
 
@@ -82,7 +138,7 @@ const App: React.FC = () => {
                 )}
 
                 {currentBook && !error && !isLoading && (
-                    <BookResult book={currentBook} />
+                    <BookResult book={currentBook} isDarkMode={isDarkMode} />
                 )}
             </div>
         </div>

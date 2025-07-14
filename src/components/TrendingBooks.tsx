@@ -7,18 +7,22 @@ interface TrendingBooksProps {
     onBookSelect: (title: string) => void;
     onRefresh: () => void;
     isLoading?: boolean;
+    isDarkMode: boolean;
 }
 
-const TrendingBooks: React.FC<TrendingBooksProps> = ({ books, onBookSelect, onRefresh, isLoading = false }) => {
+const TrendingBooks: React.FC<TrendingBooksProps> = ({ books, onBookSelect, onRefresh, isLoading = false, isDarkMode }) => {
     return (
         <div className="glass-effect rounded-2xl p-8 mb-8">
             <div className="flex items-center justify-between mb-3">
-                <h3 className="text-2xl font-bold text-white">
+                <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     Trending Books
                 </h3>
                 <button
                     onClick={onRefresh}
-                    className={`flex items-center gap-1 px-3 py-1.5 ${isLoading ? 'bg-gray-600' : 'bg-white bg-opacity-10 hover:bg-opacity-20'} text-white rounded-md transition-colors`}
+                    className={`flex items-center gap-1 px-3 py-1.5 ${isDarkMode
+                            ? `${isLoading ? 'bg-gray-800' : 'bg-gray-800 bg-opacity-70 hover:bg-opacity-90'} text-white`
+                            : `${isLoading ? 'bg-gray-200' : 'bg-gray-200 bg-opacity-70 hover:bg-opacity-90'} text-gray-800`
+                        } rounded-md transition-colors`}
                     title="Get new trending books"
                     disabled={isLoading}
                 >
@@ -26,7 +30,7 @@ const TrendingBooks: React.FC<TrendingBooksProps> = ({ books, onBookSelect, onRe
                     <span>{isLoading ? 'Refreshing...' : 'Refresh'}</span>
                 </button>
             </div>
-            <p className="text-white text-opacity-70 text-center mb-6">
+            <p className={`text-opacity-70 text-center mb-6 ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>
                 Click on a book to get its summary and 7-day action plan
             </p>
             <div className="flex flex-wrap justify-center gap-6">
@@ -42,7 +46,7 @@ const TrendingBooks: React.FC<TrendingBooksProps> = ({ books, onBookSelect, onRe
                                 <img
                                     src={book.coverImageUrl}
                                     alt={`${book.title} cover`}
-                                    className="w-full h-full object-cover rounded-lg shadow-lg border-2 border-white border-opacity-20"
+                                    className="w-full h-full object-cover rounded-lg shadow-lg border-2 border-gray-800"
                                     onError={(e) => {
                                         const img = e.currentTarget;
                                         // Show fallback icon on error
@@ -53,16 +57,16 @@ const TrendingBooks: React.FC<TrendingBooksProps> = ({ books, onBookSelect, onRe
                                 />
                             ) : null}
                             <div
-                                className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg p-4 flex items-center justify-center"
+                                className="absolute inset-0 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg p-4 flex items-center justify-center"
                                 style={{ display: book.coverImageUrl ? 'none' : 'flex' }}
                             >
                                 <BookOpen className="w-8 h-8 text-white" />
                             </div>
                         </div>
-                        <h4 className="text-white text-center font-medium text-sm line-clamp-1 w-full">
+                        <h4 className={`text-center font-medium text-sm line-clamp-1 w-full ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
                             {book.title}
                         </h4>
-                        <p className="text-white text-opacity-70 text-center text-xs mt-1">
+                        <p className={`text-opacity-70 text-center text-xs mt-1 ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>
                             {book.author}
                         </p>
                     </div>
