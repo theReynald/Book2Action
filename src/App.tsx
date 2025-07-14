@@ -149,6 +149,25 @@ const App: React.FC = () => {
                     <ErrorMessage message={error} onRetry={handleRetry} />
                 )}
 
+                {isLoading && (
+                    <div className="flex flex-col items-center justify-center my-12">
+                        <div className="book-animation-container">
+                            <img
+                                src="https://media.giphy.com/media/LYBMuRwH3JkhdmLbGE/giphy.gif"
+                                alt="Book pages flipping animation"
+                                className="book-animation-gif"
+                            />
+                        </div>
+                        <div className="mt-4 text-center overflow-hidden max-w-4xl mx-auto px-6">
+                            <div className="animated-text-container">
+                                <p className="animated-text">
+                                    Our AI is reading through the book to create a custom 7-day action plan and summary for you...
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {currentBook && !selectedAction && !error && !isLoading && (
                     <BookResult
                         book={currentBook}

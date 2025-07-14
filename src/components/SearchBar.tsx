@@ -88,7 +88,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading, isDarkMode, 
             <div className="mt-4 text-center">
                 <p className={`text-opacity-70 text-sm ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>
                     {isLoading ?
-                        "🤖 AI is analyzing the book and generating actionable insights..." :
+                        "" :
                         "Try any book title - AI will analyze it and create actionable steps!"
                     }
                 </p>

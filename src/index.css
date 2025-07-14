@@ -144,3 +144,78 @@ body.light-theme .text-themed {
 .theme-transition {
     transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
 }
+
+/* Book Animation GIF Styles */
+.book-animation-container {
+    width: 200px;
+    height: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+}
+
+.book-animation-gif {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* Animated Text */
+.animated-text-container {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    max-width: 100%;
+    border-radius: 0.75rem;
+}
+
+.animated-text {
+    position: relative;
+    display: inline-block;
+    white-space: nowrap;
+    padding: 0 10px;
+    animation: marquee 15s linear infinite;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+body.dark-theme .animated-text {
+    color: #60a5fa;
+    /* Same as text-blue-300 for days of the week in dark mode */
+}
+
+body.light-theme .animated-text {
+    color: #2563eb;
+    /* Same as text-blue-600 for days of the week in light mode */
+}
+
+@keyframes marquee {
+    0% {
+        transform: translateX(100%);
+    }
+
+    5% {
+        transform: translateX(90%);
+    }
+
+    85% {
+        transform: translateX(-90%);
+    }
+
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
+@keyframes fadeInOut {
+    0% {
+        opacity: 0.7;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
