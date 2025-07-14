@@ -104,7 +104,7 @@ const BookResult: React.FC<BookResultProps> = ({ book }) => {
             <div className="glass-effect rounded-2xl p-8 shadow-2xl">
                 <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
                     <CheckCircle className="w-6 h-6 mr-3" />
-                    10 Actionable Steps
+                    7-Day Action Plan
                 </h3>
                 <div className="grid gap-4">
                     {book.actionableSteps.map((actionableStep, index) => (
@@ -118,6 +118,9 @@ const BookResult: React.FC<BookResultProps> = ({ book }) => {
                                 </div>
                                 <div className="flex-1">
                                     <p className="text-white text-opacity-90 leading-relaxed mb-2">
+                                        {actionableStep.day && (
+                                            <span className="font-bold text-blue-300 mr-2">{actionableStep.day}:</span>
+                                        )}
                                         {actionableStep.step}
                                     </p>
                                     <div className="flex items-center text-white text-opacity-60 text-sm">

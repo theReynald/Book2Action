@@ -1,6 +1,7 @@
 export interface ActionableStep {
     step: string;
     chapter: string;
+    day?: string;
 }
 
 export interface Book {
