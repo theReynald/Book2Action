@@ -51,24 +51,52 @@ const ActionStepDetail: React.FC<ActionStepDetailProps> = ({ step, bookTitle, on
             const availableVoices = window.speechSynthesis.getVoices();
             setVoices(availableVoices);
 
-            // Set default selected voice (prefer premium voices)
-            const premiumVoice = availableVoices.find(v =>
-                (v.name.includes('Premium') || v.name.includes('Enhanced') ||
-                    v.name.includes('Neural') || v.name.includes('Wavenet') ||
-                    v.name.includes('Siri') || v.name.includes('Samantha') ||
-                    v.name.includes('Daniel') || v.name.includes('Karen')) &&
-                v.lang.includes('en')
+            // Set default selected voice (prioritize Google UK English Female)
+            const googleUKFemale = availableVoices.find(v =>
+                v.name.includes('Google UK English Female') ||
+                (v.name.toLowerCase().includes('google') && 
+                 v.name.toLowerCase().includes('uk') && 
+                 v.name.toLowerCase().includes('female')) ||
+                (v.name.toLowerCase().includes('google') && 
+                 v.lang === 'en-GB' && 
+                 v.name.toLowerCase().includes('female'))
             );
 
-            if (premiumVoice) {
-                setSelectedVoice(premiumVoice.name);
-                console.log('Selected premium voice:', premiumVoice.name);
+            if (googleUKFemale) {
+                setSelectedVoice(googleUKFemale.name);
+                console.log('Selected Google UK Female voice:', googleUKFemale.name);
             } else {
-                // Fallback to any English voice
-                const englishVoice = availableVoices.find(v => v.lang.includes('en'));
-                if (englishVoice) {
-                    setSelectedVoice(englishVoice.name);
-                    console.log('Selected English voice:', englishVoice.name);
+                // Fallback to other premium Google voices
+                const googleVoice = availableVoices.find(v =>
+                    v.name.toLowerCase().includes('google') && 
+                    v.lang.includes('en') &&
+                    v.name.toLowerCase().includes('female')
+                );
+
+                if (googleVoice) {
+                    setSelectedVoice(googleVoice.name);
+                    console.log('Selected Google Female voice:', googleVoice.name);
+                } else {
+                    // Fallback to other premium voices
+                    const premiumVoice = availableVoices.find(v =>
+                        (v.name.includes('Premium') || v.name.includes('Enhanced') ||
+                            v.name.includes('Neural') || v.name.includes('Wavenet') ||
+                            v.name.includes('Siri') || v.name.includes('Samantha') ||
+                            v.name.includes('Daniel') || v.name.includes('Karen')) &&
+                        v.lang.includes('en')
+                    );
+
+                    if (premiumVoice) {
+                        setSelectedVoice(premiumVoice.name);
+                        console.log('Selected premium voice:', premiumVoice.name);
+                    } else {
+                        // Final fallback to any English voice
+                        const englishVoice = availableVoices.find(v => v.lang.includes('en'));
+                        if (englishVoice) {
+                            setSelectedVoice(englishVoice.name);
+                            console.log('Selected English voice:', englishVoice.name);
+                        }
+                    }
                 }
             }
         };
@@ -330,7 +358,27 @@ const ActionStepDetail: React.FC<ActionStepDetailProps> = ({ step, bookTitle, on
                                     {voices
                                         .filter(voice => voice.lang.includes('en'))
                                         .sort((a, b) => {
-                                            // Sort premium voices first
+                                            // Prioritize Google UK English Female first
+                                            const aIsGoogleUKFemale = a.name.includes('Google UK English Female') ||
+                                                (a.name.toLowerCase().includes('google') && 
+                                                 a.name.toLowerCase().includes('uk') && 
+                                                 a.name.toLowerCase().includes('female'));
+                                            const bIsGoogleUKFemale = b.name.includes('Google UK English Female') ||
+                                                (b.name.toLowerCase().includes('google') && 
+                                                 b.name.toLowerCase().includes('uk') && 
+                                                 b.name.toLowerCase().includes('female'));
+
+                                            if (aIsGoogleUKFemale && !bIsGoogleUKFemale) return -1;
+                                            if (!aIsGoogleUKFemale && bIsGoogleUKFemale) return 1;
+
+                                            // Then prioritize other Google voices
+                                            const aIsGoogle = a.name.toLowerCase().includes('google');
+                                            const bIsGoogle = b.name.toLowerCase().includes('google');
+
+                                            if (aIsGoogle && !bIsGoogle) return -1;
+                                            if (!aIsGoogle && bIsGoogle) return 1;
+
+                                            // Then sort premium voices
                                             const aPremium = a.name.includes('Premium') ||
                                                 a.name.includes('Enhanced') ||
                                                 a.name.includes('Neural') ||
