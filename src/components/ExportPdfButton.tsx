@@ -26,12 +26,14 @@ const ExportPdfButton: React.FC<ExportPdfButtonProps> = ({ book, isDarkMode }) =
                 throw new Error('PDF content not available');
             }
 
-            // Create a new jsPDF instance
-            const pdf = new jsPDF({
-                orientation: 'portrait',
-                unit: 'pt',
-                format: 'a4'
-            });
+      // Create a new jsPDF instance with compression
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'pt',
+        format: 'a4',
+        compress: true, // Enable compression
+        precision: 2 // Reduce precision for smaller file size
+      });
 
             // Set PDF metadata for searchability
             pdf.setProperties({
@@ -61,23 +63,38 @@ const ExportPdfButton: React.FC<ExportPdfButtonProps> = ({ book, isDarkMode }) =
                     pdf.addPage();
                 }
 
-                const section = sections[i] as HTMLElement;
+        const section = sections[i] as HTMLElement;
+        
+        // Capture section with optimized settings for smaller file size
+        const canvas = await html2canvas(section, {
+          scale: 1.2, // Reduced from 2 to 1.2 for smaller file size
+          useCORS: true,
+          logging: false,
+          allowTaint: true,
+          backgroundColor: '#ffffff',
+          width: section.scrollWidth,
+          height: section.scrollHeight,
+          // Optimize for smaller file size
+          removeContainer: true,
+          imageTimeout: 5000
+        });
 
-                // Capture section as high-quality image
-                const canvas = await html2canvas(section, {
-                    scale: 2, // Higher quality
-                    useCORS: true,
-                    logging: false,
-                    allowTaint: true,
-                    backgroundColor: '#ffffff'
-                });
+        // Use JPEG compression for smaller file size
+        const imgData = canvas.toDataURL('image/jpeg', 0.75); // 75% quality JPEG
+        const imgWidth = pageWidth - (margin * 2);
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-                const imgData = canvas.toDataURL('image/png');
-                const imgWidth = pageWidth - (margin * 2);
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-                // Add the visual content
-                pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
+        // Add the visual content with compression
+        pdf.addImage(
+          imgData, 
+          'JPEG', 
+          margin, 
+          margin, 
+          imgWidth, 
+          imgHeight,
+          undefined, // alias
+          'FAST' // compression mode for smaller file size
+        );
 
                 // Add invisible searchable text layer
                 pdf.setTextColor(255, 255, 255, 0); // Transparent text
