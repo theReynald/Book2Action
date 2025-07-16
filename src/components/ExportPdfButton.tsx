@@ -46,10 +46,38 @@ const ExportPdfButton: React.FC<ExportPdfButtonProps> = ({ book, isDarkMode }) =
             const contentWidth = pageWidth - (margin * 2);
             let yPosition = margin;
 
-            // Helper function to add text with word wrapping
-            const addText = (text: string, fontSize: number, isBold: boolean = false, isCenter: boolean = false) => {
+            // Color theme definitions - matching home page theme
+            const colors = {
+                primary: [49, 130, 206],       // #3182ce - Steel Blue (main blue from home page)
+                secondary: [66, 153, 225],     // #4299e1 - Lighter Blue (gradient end from home page)
+                accent: [59, 130, 246],        // #3b82f6 - Blue-500 (accent color)
+                text: [30, 41, 59],            // #1e293b - Slate-800 (dark text)
+                lightText: [100, 116, 139],    // #64748b - Slate-500 (medium gray)
+                success: [34, 197, 94],        // #22c55e - Green-500 (for success states)
+                background: [248, 250, 252],   // #f8fafc - Slate-50 (light background)
+                darkBlue: [30, 58, 138],       // #1e3a8a - Blue-900 (dark blue for headers)
+                lightBg: [239, 246, 255]       // #eff6ff - Blue-50 (light blue background)
+            };
+
+            // Helper function to add colored background
+            const addColoredBackground = (x: number, y: number, width: number, height: number, color: number[]) => {
+                pdf.setFillColor(color[0], color[1], color[2]);
+                pdf.rect(x, y - height + 5, width, height, 'F');
+            };
+
+            // Helper function to add text with word wrapping and color options
+            const addText = (
+                text: string,
+                fontSize: number,
+                isBold: boolean = false,
+                isCenter: boolean = false,
+                color: number[] = colors.text,
+                hasBackground: boolean = false,
+                backgroundColorOverride?: number[]
+            ) => {
                 pdf.setFontSize(fontSize);
                 pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
+                pdf.setTextColor(color[0], color[1], color[2]);
 
                 const lines = pdf.splitTextToSize(text, contentWidth);
                 const lineHeight = fontSize * 1.2;
@@ -62,6 +90,16 @@ const ExportPdfButton: React.FC<ExportPdfButtonProps> = ({ book, isDarkMode }) =
 
                 lines.forEach((line: string) => {
                     const x = isCenter ? (pageWidth - pdf.getTextWidth(line)) / 2 : margin;
+
+                    // Add background if requested
+                    if (hasBackground) {
+                        const bgColor = backgroundColorOverride || colors.background;
+                        const textWidth = pdf.getTextWidth(line);
+                        const bgWidth = isCenter ? textWidth + 20 : contentWidth;
+                        const bgX = isCenter ? x - 10 : margin - 10;
+                        addColoredBackground(bgX, yPosition, bgWidth, lineHeight, bgColor);
+                    }
+
                     pdf.text(line, x, yPosition);
                     yPosition += lineHeight;
                 });
@@ -76,46 +114,47 @@ const ExportPdfButton: React.FC<ExportPdfButtonProps> = ({ book, isDarkMode }) =
                     pdf.addPage();
                     yPosition = margin;
                 }
-            };
-
-            // Title Page
-            pdf.setTextColor(0, 0, 0);
+            };            // Title Page
             yPosition = margin + 60;
 
-            addText(book.title, 24, true, true);
+            // Add a colored header background
+            addColoredBackground(0, yPosition + 20, pageWidth, 80, colors.primary);
+
+            addText(book.title, 24, true, true, [255, 255, 255]); // White text on blue background
             addSpacing(10);
-            addText(`by ${book.author}`, 16, false, true);
+            addText(`by ${book.author}`, 16, false, true, colors.secondary);
             addSpacing(30);
-            addText(`${exportMode === 'short' ? 'Quick' : '7-Day Complete'} Action Plan`, 18, true, true);
+            addText(`${exportMode === 'short' ? 'Quick' : '7-Day Complete'} Action Plan`, 18, true, true, colors.accent);
             addSpacing(40);
 
             if (exportMode === 'short') {
                 // Short Plan Implementation
-                addText('Quick Action Plan', 20, true);
+                addText('Quick Action Plan', 20, true, false, colors.primary);
                 addSpacing(20);
 
-                addText('Summary:', 16, true);
+                addText('Summary:', 16, true, false, colors.secondary);
                 addSpacing(10);
-                addText(book.summary, 12);
+                addText(book.summary, 12, false, false, colors.text);
                 addSpacing(20);
 
-                addText('Action Steps:', 16, true);
+                addText('Action Steps:', 16, true, false, colors.secondary);
                 addSpacing(15);
 
                 book.actionableSteps.forEach((step, index) => {
-                    addText(`• ${step.step}`, 12);
+                    // Add colored number for each step
+                    addText(`${index + 1}. ${step.step}`, 12, true, false, colors.darkBlue);
                     addSpacing(5);
-                    if (step.details?.keyTakeaway) {
-                        addText(`  ${step.details.keyTakeaway}`, 11);
+                    if (step.chapter) {
+                        addText(`   Chapter: ${step.chapter}`, 11, false, false, colors.lightText);
                     }
                     addSpacing(12);
                 });
 
             } else {
                 // Detailed Plan Implementation
-                addText('Book Summary', 20, true);
+                addText('Book Summary', 20, true, false, colors.primary, true, colors.lightBg);
                 addSpacing(15);
-                addText(book.summary, 12);
+                addText(book.summary, 12, false, false, colors.text);
                 addSpacing(30);
 
                 // Add each day as a separate section
@@ -126,35 +165,36 @@ const ExportPdfButton: React.FC<ExportPdfButtonProps> = ({ book, isDarkMode }) =
                         yPosition = margin;
                     }
 
-                    addText(`Day ${index + 1}: ${step.step}`, 18, true);
+                    // Day header with colored background
+                    addText(`Day ${index + 1}: ${step.step}`, 18, true, false, [255, 255, 255], true, colors.primary);
                     addSpacing(20);
 
-                    addText('Action:', 14, true);
+                    addText('Action:', 14, true, false, colors.secondary);
                     addSpacing(10);
-                    addText(step.step, 12);
+                    addText(step.step, 12, false, false, colors.text);
                     addSpacing(15);
 
                     if (step.details?.keyTakeaway) {
-                        addText('Key Takeaway:', 14, true);
+                        addText('Key Takeaway:', 14, true, false, colors.accent);
                         addSpacing(10);
-                        addText(step.details.keyTakeaway, 12);
+                        addText(step.details.keyTakeaway, 12, false, false, colors.text);
                         addSpacing(15);
                     }
 
                     if (step.details?.sentences && step.details.sentences.length > 0) {
-                        addText('Supporting Details:', 14, true);
+                        addText('Supporting Details:', 14, true, false, colors.secondary);
                         addSpacing(10);
                         step.details.sentences.forEach(sentence => {
-                            addText(`• ${sentence}`, 12);
+                            addText(`• ${sentence}`, 12, false, false, colors.text);
                             addSpacing(8);
                         });
                         addSpacing(15);
                     }
 
                     if (step.chapter) {
-                        addText('Source Chapter:', 14, true);
+                        addText('Source Chapter:', 14, true, false, colors.lightText);
                         addSpacing(10);
-                        addText(step.chapter, 12);
+                        addText(step.chapter, 12, false, false, colors.lightText);
                         addSpacing(15);
                     }
                 });
