@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Book, ActionableStep } from '../types/Book';
-import { BookOpen, User, Calendar, Tag, CheckCircle, Bookmark, CalendarPlus, Volume2, VolumeX, Pause, Settings, ChevronDown, ExternalLink } from 'lucide-react';
+import { BookOpen, User, Calendar, Tag, CheckCircle, Bookmark, CalendarPlus, Volume2, VolumeX, Pause, Settings, ExternalLink } from 'lucide-react';
+import ExportPdfButton from './ExportPdfButton';
 
 interface BookResultProps {
     book: Book;
@@ -283,12 +284,12 @@ const BookResult: React.FC<BookResultProps> = ({ book, isDarkMode, onActionSelec
                                     if (book.isbn && currentSrc.includes('openlibrary.org/b/isbn/')) {
                                         // Fallback 1: Try Google Books using ISBN
                                         console.log('Trying Google Books API fallback with ISBN');
-                                        img.src = `https://books.google.com/books/content?id=ISBN:${book.isbn}&printsec=frontcover&img=1&zoom=1&source=gbs_api`;
+                                        img.src = `https://books.google.com/books/content?id=ISBN:${book.isbn}&printsec=frontcover&img=1&zoom=1&source=gbs-api`;
                                     }
                                     else if (book.isbn && currentSrc.includes('books.google.com') && currentSrc.includes('ISBN:')) {
                                         // Fallback 2: Try Google Books ID lookup
                                         console.log('Trying Google Books API fallback with direct ID');
-                                        img.src = `https://books.google.com/books/content?id=${book.isbn}&printsec=frontcover&img=1&zoom=1&source=gbs_api`;
+                                        img.src = `https://books.google.com/books/content?id=${book.isbn}&printsec=frontcover&img=1&zoom=1&source=gbs-api`;
                                     }
                                     else if (currentSrc.includes('books.google.com')) {
                                         // Fallback 3: Try title-based OpenLibrary search
@@ -378,7 +379,7 @@ const BookResult: React.FC<BookResultProps> = ({ book, isDarkMode, onActionSelec
                         Summary
                     </h3>
                     <div className="flex gap-3 items-center relative z-50">
-                        {/* Read Aloud Buttons First */}
+                        {/* Read Aloud Buttons */}
                         {isSpeaking ? (
                             <>
                                 <button
@@ -508,11 +509,13 @@ const BookResult: React.FC<BookResultProps> = ({ book, isDarkMode, onActionSelec
             </div>
 
             {/* Actionable Steps Section */}
-            <div className="glass-effect rounded-2xl p-8 shadow-2xl">
-                <h3 className={`text-2xl font-bold mb-6 flex items-center ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+            <div className="glass-effect rounded-2xl p-8 shadow-2xl">            <div className="flex items-center justify-between mb-6">
+                <h3 className={`text-2xl font-bold flex items-center ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
                     <CheckCircle className="w-6 h-6 mr-3" />
                     7-Day Action Plan
                 </h3>
+                <ExportPdfButton book={book} isDarkMode={isDarkMode} />
+            </div>
                 <div className="grid gap-4">
                     {book.actionableSteps.map((actionableStep, index) => (
                         <div
@@ -562,6 +565,8 @@ const BookResult: React.FC<BookResultProps> = ({ book, isDarkMode, onActionSelec
                     ))}
                 </div>
             </div>
+
+
         </div>
     );
 };
