@@ -2,7 +2,8 @@ import React, { useState, useRef } from 'react';
 import { Book } from '../types/Book';
 import { FileDown, Printer, Check } from 'lucide-react';
 import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+
+// Export PDF Button Component
 
 interface ExportPdfButtonProps {
     book: Book;
@@ -15,25 +16,20 @@ const ExportPdfButton: React.FC<ExportPdfButtonProps> = ({ book, isDarkMode }) =
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const optionsRef = useRef<HTMLDivElement>(null);
-    const pdfContentRef = useRef<HTMLDivElement>(null);
 
-    // Handle PDF generation using jsPDF + html2canvas
+    // Handle PDF generation using pure jsPDF text methods for searchability
     const handleExport = async () => {
         setIsGenerating(true);
 
         try {
-            if (!pdfContentRef.current) {
-                throw new Error('PDF content not available');
-            }
-
-      // Create a new jsPDF instance with compression
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'pt',
-        format: 'a4',
-        compress: true, // Enable compression
-        precision: 2 // Reduce precision for smaller file size
-      });
+            // Create a new jsPDF instance with compression
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'pt',
+                format: 'a4',
+                compress: true,
+                precision: 2
+            });
 
             // Set PDF metadata for searchability
             pdf.setProperties({
@@ -44,70 +40,123 @@ const ExportPdfButton: React.FC<ExportPdfButtonProps> = ({ book, isDarkMode }) =
                 creator: 'Book2Action'
             });
 
-            const pdfContent = pdfContentRef.current;
-
-            // Get sections that should be on separate pages (for detailed mode)
-            const sections = exportMode === 'detailed'
-                ? pdfContent.querySelectorAll('.pdf-page-section')
-                : [pdfContent.querySelector('.pdf-content')];
-
             const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
             const margin = 40;
+            const contentWidth = pageWidth - (margin * 2);
+            let yPosition = margin;
 
-            // Process each section
-            for (let i = 0; i < sections.length; i++) {
-                if (!sections[i]) continue;
+            // Helper function to add text with word wrapping
+            const addText = (text: string, fontSize: number, isBold: boolean = false, isCenter: boolean = false) => {
+                pdf.setFontSize(fontSize);
+                pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
 
-                // Add new page for each section after the first
-                if (i > 0) {
+                const lines = pdf.splitTextToSize(text, contentWidth);
+                const lineHeight = fontSize * 1.2;
+
+                // Check if we need a new page
+                if (yPosition + (lines.length * lineHeight) > pageHeight - margin) {
                     pdf.addPage();
+                    yPosition = margin;
                 }
 
-        const section = sections[i] as HTMLElement;
-        
-        // Capture section with optimized settings for smaller file size
-        const canvas = await html2canvas(section, {
-          scale: 1.2, // Reduced from 2 to 1.2 for smaller file size
-          useCORS: true,
-          logging: false,
-          allowTaint: true,
-          backgroundColor: '#ffffff',
-          width: section.scrollWidth,
-          height: section.scrollHeight,
-          // Optimize for smaller file size
-          removeContainer: true,
-          imageTimeout: 5000
-        });
+                lines.forEach((line: string) => {
+                    const x = isCenter ? (pageWidth - pdf.getTextWidth(line)) / 2 : margin;
+                    pdf.text(line, x, yPosition);
+                    yPosition += lineHeight;
+                });
 
-        // Use JPEG compression for smaller file size
-        const imgData = canvas.toDataURL('image/jpeg', 0.75); // 75% quality JPEG
-        const imgWidth = pageWidth - (margin * 2);
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                return yPosition;
+            };
 
-        // Add the visual content with compression
-        pdf.addImage(
-          imgData, 
-          'JPEG', 
-          margin, 
-          margin, 
-          imgWidth, 
-          imgHeight,
-          undefined, // alias
-          'FAST' // compression mode for smaller file size
-        );
+            // Helper function to add spacing
+            const addSpacing = (space: number) => {
+                yPosition += space;
+                if (yPosition > pageHeight - margin) {
+                    pdf.addPage();
+                    yPosition = margin;
+                }
+            };
 
-                // Add invisible searchable text layer
-                pdf.setTextColor(255, 255, 255, 0); // Transparent text
-                pdf.setFontSize(1);
+            // Title Page
+            pdf.setTextColor(0, 0, 0);
+            yPosition = margin + 60;
 
-                // Get text content from this section
-                const sectionText = section.innerText || section.textContent || '';
-                const textLines = pdf.splitTextToSize(sectionText, imgWidth);
+            addText(book.title, 24, true, true);
+            addSpacing(10);
+            addText(`by ${book.author}`, 16, false, true);
+            addSpacing(30);
+            addText(`${exportMode === 'short' ? 'Quick' : '7-Day Complete'} Action Plan`, 18, true, true);
+            addSpacing(40);
 
-                // Place invisible text at the top of the page for search indexing
-                pdf.text(textLines, margin, margin + 10, {
-                    renderingMode: 'invisible',
-                    maxWidth: imgWidth
+            if (exportMode === 'short') {
+                // Short Plan Implementation
+                addText('Quick Action Plan', 20, true);
+                addSpacing(20);
+
+                addText('Summary:', 16, true);
+                addSpacing(10);
+                addText(book.summary, 12);
+                addSpacing(20);
+
+                addText('Action Steps:', 16, true);
+                addSpacing(15);
+
+                book.actionableSteps.forEach((step, index) => {
+                    addText(`• ${step.step}`, 12);
+                    addSpacing(5);
+                    if (step.details?.keyTakeaway) {
+                        addText(`  ${step.details.keyTakeaway}`, 11);
+                    }
+                    addSpacing(12);
+                });
+
+            } else {
+                // Detailed Plan Implementation
+                addText('Book Summary', 20, true);
+                addSpacing(15);
+                addText(book.summary, 12);
+                addSpacing(30);
+
+                // Add each day as a separate section
+                book.actionableSteps.forEach((step, index) => {
+                    // Add page break for each day (except the first)
+                    if (index > 0) {
+                        pdf.addPage();
+                        yPosition = margin;
+                    }
+
+                    addText(`Day ${index + 1}: ${step.step}`, 18, true);
+                    addSpacing(20);
+
+                    addText('Action:', 14, true);
+                    addSpacing(10);
+                    addText(step.step, 12);
+                    addSpacing(15);
+
+                    if (step.details?.keyTakeaway) {
+                        addText('Key Takeaway:', 14, true);
+                        addSpacing(10);
+                        addText(step.details.keyTakeaway, 12);
+                        addSpacing(15);
+                    }
+
+                    if (step.details?.sentences && step.details.sentences.length > 0) {
+                        addText('Supporting Details:', 14, true);
+                        addSpacing(10);
+                        step.details.sentences.forEach(sentence => {
+                            addText(`• ${sentence}`, 12);
+                            addSpacing(8);
+                        });
+                        addSpacing(15);
+                    }
+
+                    if (step.chapter) {
+                        addText('Source Chapter:', 14, true);
+                        addSpacing(10);
+                        addText(step.chapter, 12);
+                        addSpacing(15);
+                    }
                 });
             }
 
@@ -231,430 +280,6 @@ const ExportPdfButton: React.FC<ExportPdfButtonProps> = ({ book, isDarkMode }) =
                     </p>
                 </div>
             )}
-
-            {/* Hidden content used for PDF generation */}
-            <div ref={pdfContentRef} style={{ position: 'absolute', left: '-9999px', top: 0, width: '800px', zIndex: -100 }}>
-                {exportMode === 'detailed' ? (
-                    // Detailed mode: Each section on separate pages
-                    <>
-                        {/* Page 1: Header and Summary */}
-                        <div className="pdf-page-section" style={{
-                            width: '800px',
-                            padding: '40px',
-                            backgroundColor: '#ffffff',
-                            color: '#000000',
-                            fontFamily: 'Arial, sans-serif',
-                            minHeight: '1000px'
-                        }}>
-                            <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-                                <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: '#3b82f6', marginBottom: '10px' }}>
-                                    Book2Action
-                                </h1>
-                                <p style={{ fontSize: '16px', color: '#666666', marginBottom: '30px' }}>
-                                    Transform Books Into Actionable Insights
-                                </p>
-                                <h1 style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '10px' }}>
-                                    {book.title}
-                                </h1>
-                                <p style={{ fontSize: '18px', marginBottom: '5px' }}>by {book.author}</p>
-                                {book.publishedYear && <p style={{ fontSize: '14px', color: '#666666', marginBottom: '5px' }}>Published: {book.publishedYear}</p>}
-                                <h2 style={{ fontSize: '20px', color: '#1e3a8a', marginTop: '20px' }}>
-                                    7-Day Complete Action Plan with Details
-                                </h2>
-                            </div>
-
-                            <div style={{
-                                border: '2px solid #e5e7eb',
-                                borderRadius: '12px',
-                                padding: '30px',
-                                backgroundColor: '#f9fafb'
-                            }}>
-                                <h2 style={{
-                                    fontSize: '24px',
-                                    fontWeight: 'bold',
-                                    marginBottom: '20px',
-                                    borderBottom: '3px solid #3b82f6',
-                                    paddingBottom: '10px',
-                                    color: '#1e3a8a'
-                                }}>
-                                    Book Summary
-                                </h2>
-                                <p style={{
-                                    fontSize: '16px',
-                                    lineHeight: '1.6',
-                                    textAlign: 'justify',
-                                    color: '#333333'
-                                }}>
-                                    {book.summary}
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Individual pages for each day */}
-                        {book.actionableSteps.map((step, index) => (
-                            <div key={index} className="pdf-page-section" style={{
-                                width: '800px',
-                                padding: '40px',
-                                backgroundColor: '#ffffff',
-                                color: '#000000',
-                                fontFamily: 'Arial, sans-serif',
-                                minHeight: '1000px'
-                            }}>
-                                <div style={{
-                                    border: '2px solid #e5e7eb',
-                                    borderRadius: '12px',
-                                    padding: '30px',
-                                    backgroundColor: '#f9fafb'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
-                                        <div style={{
-                                            backgroundColor: '#3b82f6',
-                                            color: 'white',
-                                            borderRadius: '50%',
-                                            width: '50px',
-                                            height: '50px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            fontWeight: 'bold',
-                                            fontSize: '24px',
-                                            marginRight: '20px'
-                                        }}>
-                                            {index + 1}
-                                        </div>
-                                        <div>
-                                            <h2 style={{
-                                                fontSize: '28px',
-                                                fontWeight: 'bold',
-                                                margin: '0',
-                                                color: '#1e3a8a'
-                                            }}>
-                                                {step.day}
-                                            </h2>
-                                        </div>
-                                    </div>
-
-                                    <h3 style={{
-                                        fontSize: '20px',
-                                        fontWeight: 'bold',
-                                        marginBottom: '15px',
-                                        color: '#1e3a8a'
-                                    }}>
-                                        Action Step:
-                                    </h3>
-                                    <p style={{
-                                        fontSize: '18px',
-                                        lineHeight: '1.6',
-                                        marginBottom: '25px',
-                                        padding: '20px',
-                                        backgroundColor: '#ffffff',
-                                        border: '1px solid #e2e8f0',
-                                        borderRadius: '8px'
-                                    }}>
-                                        {step.step}
-                                    </p>
-
-                                    {step.details && (
-                                        <>
-                                            <h3 style={{
-                                                fontSize: '18px',
-                                                fontWeight: 'bold',
-                                                marginBottom: '15px',
-                                                color: '#1e3a8a'
-                                            }}>
-                                                Key Takeaway:
-                                            </h3>
-                                            <p style={{
-                                                fontSize: '16px',
-                                                fontStyle: 'italic',
-                                                lineHeight: '1.6',
-                                                marginBottom: '25px',
-                                                padding: '20px',
-                                                backgroundColor: '#f8fafc',
-                                                border: '1px solid #e2e8f0',
-                                                borderRadius: '8px'
-                                            }}>
-                                                {step.details.keyTakeaway}
-                                            </p>
-
-                                            {step.details.sentences && step.details.sentences.length > 0 && (
-                                                <>
-                                                    <h3 style={{
-                                                        fontSize: '18px',
-                                                        fontWeight: 'bold',
-                                                        marginBottom: '15px',
-                                                        color: '#1e3a8a'
-                                                    }}>
-                                                        Supporting Points:
-                                                    </h3>
-                                                    <ul style={{
-                                                        fontSize: '16px',
-                                                        lineHeight: '1.6',
-                                                        paddingLeft: '20px',
-                                                        marginBottom: '20px'
-                                                    }}>
-                                                        {step.details.sentences.map((sentence, idx) => (
-                                                            <li key={idx} style={{
-                                                                marginBottom: '10px',
-                                                                padding: '10px',
-                                                                backgroundColor: '#ffffff',
-                                                                border: '1px solid #e2e8f0',
-                                                                borderRadius: '6px',
-                                                                listStyleType: 'disc'
-                                                            }}>
-                                                                {sentence}
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </>
-                                            )}
-
-                                            <p style={{
-                                                fontSize: '14px',
-                                                fontStyle: 'italic',
-                                                color: '#666666',
-                                                textAlign: 'right',
-                                                marginTop: '20px'
-                                            }}>
-                                                Referenced from: {step.chapter}
-                                            </p>
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
-
-                        {/* Final page: Weekly checklist */}
-                        <div className="pdf-page-section" style={{
-                            width: '800px',
-                            padding: '40px',
-                            backgroundColor: '#ffffff',
-                            color: '#000000',
-                            fontFamily: 'Arial, sans-serif',
-                            minHeight: '1000px'
-                        }}>
-                            <h2 style={{
-                                fontSize: '28px',
-                                fontWeight: 'bold',
-                                textAlign: 'center',
-                                marginBottom: '30px',
-                                color: '#1e3a8a',
-                                borderBottom: '3px solid #3b82f6',
-                                paddingBottom: '15px'
-                            }}>
-                                Weekly Action Checklist
-                            </h2>
-
-                            <div style={{
-                                border: '2px solid #e5e7eb',
-                                borderRadius: '12px',
-                                padding: '30px',
-                                backgroundColor: '#f9fafb'
-                            }}>
-                                {book.actionableSteps.map((step, index) => (
-                                    <div key={index} style={{
-                                        display: 'flex',
-                                        alignItems: 'flex-start',
-                                        marginBottom: '20px',
-                                        padding: '15px',
-                                        backgroundColor: '#ffffff',
-                                        border: '1px solid #e2e8f0',
-                                        borderRadius: '8px'
-                                    }}>
-                                        <div style={{
-                                            minWidth: '30px',
-                                            height: '30px',
-                                            border: '2px solid #3b82f6',
-                                            borderRadius: '6px',
-                                            marginRight: '15px',
-                                            marginTop: '2px'
-                                        }}></div>
-                                        <div>
-                                            <h3 style={{
-                                                fontSize: '18px',
-                                                fontWeight: 'bold',
-                                                marginBottom: '5px',
-                                                color: '#1e3a8a'
-                                            }}>
-                                                {step.day}
-                                            </h3>
-                                            <p style={{
-                                                fontSize: '16px',
-                                                lineHeight: '1.5',
-                                                color: '#333333'
-                                            }}>
-                                                {step.step}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </>
-                ) : (
-                    // Short mode: All content on fewer pages
-                    <div className="pdf-content" style={{
-                        width: '800px',
-                        padding: '40px',
-                        backgroundColor: '#ffffff',
-                        color: '#000000',
-                        fontFamily: 'Arial, sans-serif'
-                    }}>
-                        {/* Header */}
-                        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-                            <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: '#3b82f6', marginBottom: '10px' }}>
-                                Book2Action
-                            </h1>
-                            <p style={{ fontSize: '16px', color: '#666666', marginBottom: '30px' }}>
-                                Transform Books Into Actionable Insights
-                            </p>
-                            <h1 style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '10px' }}>
-                                {book.title}
-                            </h1>
-                            <p style={{ fontSize: '18px', marginBottom: '5px' }}>by {book.author}</p>
-                            <h2 style={{ fontSize: '20px', color: '#1e3a8a', marginTop: '20px' }}>
-                                7-Day Quick Action Plan
-                            </h2>
-                        </div>
-
-                        {/* Summary */}
-                        <div style={{
-                            border: '2px solid #e5e7eb',
-                            borderRadius: '12px',
-                            padding: '25px',
-                            backgroundColor: '#f9fafb',
-                            marginBottom: '30px'
-                        }}>
-                            <h2 style={{
-                                fontSize: '22px',
-                                fontWeight: 'bold',
-                                marginBottom: '15px',
-                                borderBottom: '2px solid #3b82f6',
-                                paddingBottom: '8px',
-                                color: '#1e3a8a'
-                            }}>
-                                Book Summary
-                            </h2>
-                            <p style={{
-                                fontSize: '16px',
-                                lineHeight: '1.6',
-                                textAlign: 'justify',
-                                color: '#333333'
-                            }}>
-                                {book.summary}
-                            </p>
-                        </div>
-
-                        {/* Checklist Table */}
-                        <div style={{
-                            border: '2px solid #e5e7eb',
-                            borderRadius: '12px',
-                            padding: '25px',
-                            backgroundColor: '#f9fafb'
-                        }}>
-                            <h2 style={{
-                                fontSize: '22px',
-                                fontWeight: 'bold',
-                                marginBottom: '20px',
-                                borderBottom: '2px solid #3b82f6',
-                                paddingBottom: '8px',
-                                color: '#1e3a8a'
-                            }}>
-                                Weekly Action Checklist
-                            </h2>
-
-                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                <thead>
-                                    <tr style={{ backgroundColor: '#e2e8f0' }}>
-                                        <th style={{
-                                            padding: '12px',
-                                            textAlign: 'left',
-                                            width: '30%',
-                                            borderBottom: '2px solid #3b82f6',
-                                            fontSize: '16px',
-                                            fontWeight: 'bold'
-                                        }}>
-                                            Day
-                                        </th>
-                                        <th style={{
-                                            padding: '12px',
-                                            textAlign: 'left',
-                                            borderBottom: '2px solid #3b82f6',
-                                            fontSize: '16px',
-                                            fontWeight: 'bold'
-                                        }}>
-                                            Action Step
-                                        </th>
-                                        <th style={{
-                                            padding: '12px',
-                                            textAlign: 'center',
-                                            width: '15%',
-                                            borderBottom: '2px solid #3b82f6',
-                                            fontSize: '16px',
-                                            fontWeight: 'bold'
-                                        }}>
-                                            Done
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {book.actionableSteps.map((step, index) => (
-                                        <tr key={index} style={{
-                                            backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8fafc'
-                                        }}>
-                                            <td style={{
-                                                padding: '12px',
-                                                fontWeight: 'bold',
-                                                color: '#1e3a8a',
-                                                borderBottom: '1px solid #e5e7eb',
-                                                fontSize: '16px'
-                                            }}>
-                                                {step.day}
-                                            </td>
-                                            <td style={{
-                                                padding: '12px',
-                                                borderBottom: '1px solid #e5e7eb',
-                                                fontSize: '15px',
-                                                lineHeight: '1.4'
-                                            }}>
-                                                {step.step}
-                                            </td>
-                                            <td style={{
-                                                padding: '12px',
-                                                textAlign: 'center',
-                                                borderBottom: '1px solid #e5e7eb'
-                                            }}>
-                                                <div style={{
-                                                    width: '25px',
-                                                    height: '25px',
-                                                    border: '2px solid #3b82f6',
-                                                    borderRadius: '4px',
-                                                    margin: '0 auto'
-                                                }}></div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* Footer */}
-                        <div style={{
-                            marginTop: '40px',
-                            paddingTop: '20px',
-                            borderTop: '1px solid #e5e7eb',
-                            textAlign: 'center',
-                            color: '#666666',
-                            fontSize: '14px'
-                        }}>
-                            <p>Generated by Book2Action on {new Date().toLocaleDateString()}</p>
-                            <p style={{ color: '#3b82f6', fontWeight: 'bold', marginTop: '5px' }}>
-                                Turn knowledge into action with practical lessons from books
-                            </p>
-                        </div>
-                    </div>
-                )}
-            </div>
         </div>
     );
 };
