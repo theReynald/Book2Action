@@ -107,14 +107,144 @@ const ExportPdfButton: React.FC<ExportPdfButtonProps> = ({ book, isDarkMode }) =
                 return yPosition;
             };
 
-            // Helper function to add spacing
+            // Helper function to add book cover image
+            const addBookCoverImage = async () => {
+                if (!book.coverImageUrl) return;
+
+                try {
+                    // Create a temporary image element to load the book cover
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+
+                    return new Promise<void>((resolve) => {
+                        img.onload = () => {
+                            try {
+                                // Create a canvas to draw the image
+                                const canvas = document.createElement('canvas');
+                                const ctx = canvas.getContext('2d');
+
+                                if (ctx) {
+                                    // Set canvas size (small book cover size)
+                                    const maxWidth = 60;
+                                    const maxHeight = 80;
+                                    const aspectRatio = img.width / img.height;
+
+                                    let width, height;
+                                    if (aspectRatio > maxWidth / maxHeight) {
+                                        width = maxWidth;
+                                        height = maxWidth / aspectRatio;
+                                    } else {
+                                        height = maxHeight;
+                                        width = maxHeight * aspectRatio;
+                                    }
+
+                                    canvas.width = width;
+                                    canvas.height = height;
+
+                                    // Draw the image onto canvas
+                                    ctx.drawImage(img, 0, 0, width, height);
+
+                                    // Convert to data URL
+                                    const dataURL = canvas.toDataURL('image/jpeg', 0.8);
+
+                                    // Add image to PDF (positioned to the right of the title)
+                                    const imageX = pageWidth - margin - width - 10;
+                                    const imageY = yPosition - 40;
+
+                                    pdf.addImage(dataURL, 'JPEG', imageX, imageY, width, height);
+                                }
+                            } catch (error) {
+                                console.log('Error processing book cover image:', error);
+                            }
+                            resolve();
+                        };
+
+                        img.onerror = () => {
+                            console.log('Failed to load book cover image');
+                            resolve();
+                        };
+
+                        // Only set src if coverImageUrl exists
+                        if (book.coverImageUrl) {
+                            img.src = book.coverImageUrl;
+                        } else {
+                            resolve();
+                        }
+                    });
+                } catch (error) {
+                    console.log('Error loading book cover:', error);
+                }
+            };
+
+            // Helper function to add numbered text with proper indentation
+            const addNumberedText = (
+                number: number,
+                text: string,
+                fontSize: number = 12,
+                color: number[] = colors.darkBlue,
+                chapterText?: string
+            ) => {
+                pdf.setFontSize(fontSize);
+                pdf.setFont('helvetica', 'bold');
+                pdf.setTextColor(color[0], color[1], color[2]);
+
+                const numberText = `${number}.`;
+                const numberWidth = pdf.getTextWidth(numberText + ' ');
+                const indentX = margin + numberWidth;
+                const textWidth = contentWidth - numberWidth;
+                const lineHeight = fontSize * 1.2;
+
+                // Check if we need a new page
+                if (yPosition + lineHeight > pageHeight - margin) {
+                    pdf.addPage();
+                    yPosition = margin;
+                }
+
+                // Add the number
+                pdf.text(numberText, margin, yPosition);
+
+                // Split the main text to fit the remaining width
+                const lines = pdf.splitTextToSize(text, textWidth);
+
+                // Add each line with proper indentation
+                lines.forEach((line: string, index: number) => {
+                    if (index > 0 && yPosition + lineHeight > pageHeight - margin) {
+                        pdf.addPage();
+                        yPosition = margin;
+                    }
+
+                    pdf.text(line, indentX, yPosition);
+                    yPosition += lineHeight;
+                });
+
+                // Add chapter reference if provided
+                if (chapterText) {
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.setFontSize(11);
+                    pdf.setTextColor(colors.lightText[0], colors.lightText[1], colors.lightText[2]);
+
+                    const chapterLines = pdf.splitTextToSize(`Chapter: ${chapterText}`, textWidth);
+                    chapterLines.forEach((line: string) => {
+                        if (yPosition + lineHeight > pageHeight - margin) {
+                            pdf.addPage();
+                            yPosition = margin;
+                        }
+                        pdf.text(line, indentX, yPosition);
+                        yPosition += lineHeight * 0.8; // Slightly smaller line height for chapter text
+                    });
+                }
+
+                yPosition += 8; // Add some spacing after each item
+            };            // Helper function to add spacing
             const addSpacing = (space: number) => {
                 yPosition += space;
                 if (yPosition > pageHeight - margin) {
                     pdf.addPage();
                     yPosition = margin;
                 }
-            };            // Title Page
+            };
+
+            // Title Page
             yPosition = margin + 60;
 
             // Add a colored header background
@@ -125,6 +255,10 @@ const ExportPdfButton: React.FC<ExportPdfButtonProps> = ({ book, isDarkMode }) =
             addText(`by ${book.author}`, 16, false, true, colors.secondary);
             addSpacing(30);
             addText(`${exportMode === 'short' ? 'Quick' : '7-Day Complete'} Action Plan`, 18, true, true, colors.accent);
+
+            // Add book cover image to the top right
+            await addBookCoverImage();
+
             addSpacing(40);
 
             if (exportMode === 'short') {
@@ -141,13 +275,8 @@ const ExportPdfButton: React.FC<ExportPdfButtonProps> = ({ book, isDarkMode }) =
                 addSpacing(15);
 
                 book.actionableSteps.forEach((step, index) => {
-                    // Add colored number for each step
-                    addText(`${index + 1}. ${step.step}`, 12, true, false, colors.darkBlue);
-                    addSpacing(5);
-                    if (step.chapter) {
-                        addText(`   Chapter: ${step.chapter}`, 11, false, false, colors.lightText);
-                    }
-                    addSpacing(12);
+                    // Use the new numbered text function for proper alignment
+                    addNumberedText(index + 1, step.step, 12, colors.darkBlue, step.chapter);
                 });
 
             } else {
