@@ -37,7 +37,7 @@ const generateBookAnalysis = async (bookTitle: string): Promise<Book | null> => 
   "publishedYear": year_as_number,
   "genre": "Primary genre",
   "isbn": "The book's ISBN-13 number (13 digits, no hyphens)",
-  "summary": "A comprehensive 2-3 sentence summary of the book's main concepts and value proposition",
+  "summary": "A comprehensive 3-paragraph summary that deeply explores the book's core concepts, main themes, key insights, practical methodologies, and real-world applications. This should be substantial content extracted directly from the book, not just a brief overview. Include specific frameworks, principles, examples, and actionable wisdom that the author presents. Make each paragraph focus on different aspects: main premise/problem and core methodology, key insights/principles and practical applications, and lasting impact/transformation and real-world results.",
   "actionableSteps": [
     {
       "day": "Monday",
@@ -60,7 +60,10 @@ const generateBookAnalysis = async (bookTitle: string): Promise<Book | null> => 
 
 Requirements:
 - If the book doesn't exist or you're not familiar with it, return null
-- The summary should be concise but comprehensive
+- The summary should be 3 substantial paragraphs that extract real content from the book
+- Each paragraph should be 4-6 sentences long and contain specific insights from the book
+- Include the author's actual frameworks, methodologies, case studies, and examples
+- Cover the book's main premise and methodology, key principles and applications, and transformational impact
 - Each actionable step should be practical and implementable
 - Assign each step to a specific day of the week (Monday through Sunday)
 - Structure the steps as a 7-day action plan, with logical progression from Monday to Sunday
@@ -84,7 +87,7 @@ Please analyze: "${bookTitle}"`;
                     }
                 ],
                 temperature: 0.7,
-                max_tokens: 2000
+                max_tokens: 4000
             },
             {
                 headers: {
@@ -210,7 +213,7 @@ const fallbackBooks: { [key: string]: Book } = {
         genre: 'Self-Help',
         isbn: '9780735211292',
         coverImageUrl: 'https://covers.openlibrary.org/b/isbn/9780735211292-L.jpg',
-        summary: 'Atomic Habits is a comprehensive guide to building good habits and breaking bad ones. James Clear presents a proven system for improving every day through tiny changes that compound over time. The book emphasizes that small, consistent improvements lead to remarkable results, and provides practical strategies for habit formation based on the four laws of behavior change.',
+        summary: 'Atomic Habits presents a revolutionary approach to habit formation based on the principle that small changes can yield remarkable results when compounded over time. James Clear argues that we often overestimate the importance of one defining moment and underestimate the value of making small improvements on a daily basis. The book introduces the concept that if you get one percent better each day for one year, you will end up thirty-seven times better by the time you are done, demonstrating the mathematical power of marginal gains in personal development.\n\nThe core framework of the book revolves around the Four Laws of Behavior Change: make it obvious, make it attractive, make it easy, and make it satisfying. Clear systematically breaks down how habits work at a neurological level, explaining the habit loop of cue, craving, response, and reward. He demonstrates how environmental design plays a crucial role in habit formation, showing that motivation is often overrated while environment and systems design are underrated factors in creating lasting behavioral change. One of the book\'s most powerful concepts is identity-based habits, where Clear advocates focusing on who you want to become rather than what you want to achieve.\n\nThe practical applications extend beyond personal development to professional growth, relationships, and health, with Clear introducing powerful techniques such as habit stacking, the two-minute rule, and environment design strategies. The book provides numerous real-world examples and case studies, from how the British cycling team dominated international competition through marginal gains to how businesses and individuals have transformed their lives through systematic habit design. What sets Atomic Habits apart is its evidence-based approach combined with practical implementation strategies, emphasizing that systems are more important than goals and that focusing on the process rather than outcomes leads to sustainable, long-term change.',
         actionableSteps: addDetailedSteps([
             { day: 'Monday', step: 'Start with habits so small they seem almost ridiculous (2-minute rule)', chapter: 'Chapter 11: Walk Slowly, but Never Backward' },
             { day: 'Tuesday', step: 'Stack new habits onto existing ones using habit stacking', chapter: 'Chapter 5: The Best Way to Start a New Habit' },
@@ -228,7 +231,7 @@ const fallbackBooks: { [key: string]: Book } = {
         genre: 'Personal Finance',
         isbn: '9781585424337',
         coverImageUrl: 'https://covers.openlibrary.org/b/isbn/9781585424337-L.jpg',
-        summary: 'Think and Grow Rich is a classic personal development book based on Hill\'s study of successful individuals. The book outlines 13 principles for achieving wealth and success, emphasizing the power of thought, desire, and persistence. Hill argues that success begins with a burning desire and a definite plan, supported by unwavering faith and persistence.',
+        summary: 'Think and Grow Rich emerged from Napoleon Hill\'s twenty-year study of over 500 successful individuals, including Andrew Carnegie, Henry Ford, and Thomas Edison. The book presents thirteen fundamental principles for achieving wealth and success, based on Hill\'s analysis of what separates those who accumulate wealth from those who struggle financially. Hill discovered that success begins with a definite major purpose, supported by burning desire, unwavering faith, and persistent action toward clearly defined goals, with the foundation resting on the principle that thoughts become things.\n\nThe book introduces revolutionary concepts such as the "Master Mind" principle, which Hill defines as the coordination of knowledge and effort between two or more people working toward a definite purpose. He demonstrates how the most successful individuals surrounded themselves with advisors, mentors, and like-minded individuals who could provide specialized knowledge and support. Hill also explores the transmutation of sexual energy into creative and productive pursuits, arguing that the most successful people channel their emotional and physical energy into their work and goals, while addressing psychological barriers including the six basic fears that hold people back.\n\nThe lasting impact of Think and Grow Rich lies in its emphasis on personal responsibility and mental conditioning, with Hill arguing that circumstances do not make the person but rather reveal their character and mental attitude. The book provides a complete philosophy of personal achievement that extends beyond financial success to encompass happiness, health, and fulfillment. It remains one of the most influential success books ever written because it addresses the fundamental mindset shifts necessary for transforming dreams into reality, emphasizing that success begins with a burning desire and a definite plan, supported by specialized knowledge, decisive action, and unwavering persistence.',
         actionableSteps: addDetailedSteps([
             { day: 'Monday', step: 'Define your definite major purpose with specific financial goals', chapter: 'Chapter 2: Desire' },
             { day: 'Tuesday', step: 'Develop burning desire by writing down exactly what you want', chapter: 'Chapter 2: Desire' },
@@ -246,7 +249,7 @@ const fallbackBooks: { [key: string]: Book } = {
         genre: 'Self-Help',
         isbn: '9781982137274',
         coverImageUrl: 'https://books.google.com/books/content?id=ISBN:9781982137274&printsec=frontcover&img=1&zoom=1&source=gbs_api',
-        summary: 'Covey presents a principle-centered approach to personal and professional effectiveness. The book introduces seven habits that move individuals from dependence to independence to interdependence. These habits are based on universal principles and focus on character development rather than quick-fix techniques.',
+        summary: 'The 7 Habits of Highly Effective People presents a principle-centered approach to personal and professional effectiveness that has transformed millions of lives. Stephen Covey introduces a paradigm shift from the "Personality Ethic" that focuses on quick-fix techniques and manipulation tactics to the "Character Ethic" that emphasizes fundamental principles and character development. The book is built on the premise that true effectiveness comes from aligning our actions with timeless, universal principles such as integrity, human dignity, service, quality, and growth, organizing the seven habits into a logical progression from dependence to independence to interdependence.\n\nThe first three habits focus on achieving private victory and personal mastery: Be Proactive (taking responsibility for your choices), Begin with the End in Mind (defining your values and life mission), and Put First Things First (managing yourself according to your priorities). The next three habits address public victory and effective interpersonal relationships: Think Win-Win (seeking mutual benefit), Seek First to Understand Then to Be Understood (practicing empathetic communication), and Synergize (valuing differences and creating collaborative solutions). The seventh habit, Sharpen the Saw, focuses on continuous renewal in four dimensions: physical, mental, spiritual, and social/emotional, ensuring individuals maintain their capacity to practice the other habits effectively.\n\nWhat makes this book enduringly powerful is its emphasis on inside-out change, starting with self-mastery before attempting to influence others, demonstrating that quick fixes are superficial unless based on solid character and correct principles. Covey introduces powerful concepts such as the Circle of Influence versus Circle of Concern, the Time Management Matrix, and Emotional Bank Accounts in relationships. The book provides practical frameworks for decision-making, goal-setting, communication, and leadership that have been validated across cultures and industries, emphasizing that effectiveness is not just about productivity but about achieving meaningful results that align with your deepest values and contribute to the greater good.',
         actionableSteps: addDetailedSteps([
             { day: 'Monday', step: 'Be proactive: Focus on what you can control and take responsibility', chapter: 'Habit 1: Be Proactive' },
             { day: 'Tuesday', step: 'Begin with the end in mind: Define your personal mission statement', chapter: 'Habit 2: Begin with the End in Mind' },

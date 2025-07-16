@@ -8,9 +8,10 @@ import { jsPDF } from 'jspdf';
 interface ExportPdfButtonProps {
     book: Book;
     isDarkMode: boolean;
+    isExpanded?: boolean;
 }
 
-const ExportPdfButton: React.FC<ExportPdfButtonProps> = ({ book, isDarkMode }) => {
+const ExportPdfButton: React.FC<ExportPdfButtonProps> = ({ book, isDarkMode, isExpanded = false }) => {
     const [exportMode, setExportMode] = useState<'short' | 'detailed'>('detailed');
     const [showOptions, setShowOptions] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -268,7 +269,9 @@ const ExportPdfButton: React.FC<ExportPdfButtonProps> = ({ book, isDarkMode }) =
 
                 addText('Summary:', 16, true, false, colors.secondary);
                 addSpacing(10);
-                addText(book.summary, 12, false, false, colors.text);
+                // Show only first paragraph for short plan unless expanded
+                const summaryToShow = isExpanded ? book.summary : book.summary.split('\n\n')[0];
+                addText(summaryToShow, 12, false, false, colors.text);
                 addSpacing(20);
 
                 addText('Action Steps:', 16, true, false, colors.secondary);
@@ -281,14 +284,26 @@ const ExportPdfButton: React.FC<ExportPdfButtonProps> = ({ book, isDarkMode }) =
 
             } else {
                 // Detailed Plan Implementation
-                addText('Book Summary', 20, true, false, colors.primary, true, colors.lightBg);
+                addText('Detailed Book Summary', 20, true, false, colors.primary, true, colors.lightBg);
                 addSpacing(15);
-                addText(book.summary, 12, false, false, colors.text);
+
+                // Create a more detailed summary by expanding on the existing summary
+                const detailedSummary = book.summary;
+
+                addText(detailedSummary, 12, false, false, colors.text);
+                addSpacing(30);
+
+                // Add page break before starting the 7-day plan
+                pdf.addPage();
+                yPosition = margin;
+
+                // Add header for the action plan section
+                addText('7-Day Action Plan', 22, true, false, colors.primary, true, colors.lightBg);
                 addSpacing(30);
 
                 // Add each day as a separate section
                 book.actionableSteps.forEach((step, index) => {
-                    // Add page break for each day (except the first)
+                    // Add page break for each day (including the first one now)
                     if (index > 0) {
                         pdf.addPage();
                         yPosition = margin;

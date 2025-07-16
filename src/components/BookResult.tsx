@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Book, ActionableStep } from '../types/Book';
-import { BookOpen, User, Calendar, Tag, CheckCircle, Bookmark, CalendarPlus, Volume2, VolumeX, Pause, Settings, ExternalLink } from 'lucide-react';
+import { BookOpen, User, Calendar, Tag, CheckCircle, Bookmark, CalendarPlus, Volume2, VolumeX, Pause, Settings, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 import ExportPdfButton from './ExportPdfButton';
 
 interface BookResultProps {
@@ -60,8 +60,14 @@ const BookResult: React.FC<BookResultProps> = ({ book, isDarkMode, onActionSelec
     const [selectedVoice, setSelectedVoice] = useState<string>('');
     const [speechRate, setSpeechRate] = useState<number>(1.0);
     const [voiceMenuOpen, setVoiceMenuOpen] = useState<boolean>(false);
+    const [isExpanded, setIsExpanded] = useState<boolean>(false);
     const voiceMenuRef = useRef<HTMLDivElement>(null);
     const settingsButtonRef = useRef<HTMLButtonElement>(null);
+
+    // Create detailed summary that matches the PDF
+    const getDetailedSummary = () => {
+        return book.summary; // Just return the book summary without additional text
+    };
 
     // Click outside handler for voice menu
     useEffect(() => {
@@ -178,7 +184,7 @@ const BookResult: React.FC<BookResultProps> = ({ book, isDarkMode, onActionSelec
         window.speechSynthesis.cancel();
 
         // Create text to be read
-        let textToRead = `Book: ${book.title} by ${book.author}.\n\nSummary: ${book.summary}\n\nHere is your 7-Day Action Plan:\n`;
+        let textToRead = `Book: ${book.title} by ${book.author}.\n\nSummary: ${isExpanded ? getDetailedSummary() : book.summary}\n\nHere is your 7-Day Action Plan:\n`;
 
         book.actionableSteps.forEach((step, index) => {
             textToRead += `${step.day}: ${step.step}. From ${step.chapter}.\n`;
@@ -551,9 +557,57 @@ const BookResult: React.FC<BookResultProps> = ({ book, isDarkMode, onActionSelec
                         )}
                     </div>
                 </div>
-                <p className={`leading-relaxed text-lg ${isDarkMode ? 'text-white text-opacity-90' : 'text-gray-800'}`}>
-                    {book.summary}
-                </p>
+                <div className={`leading-relaxed text-lg ${isDarkMode ? 'text-white text-opacity-90' : 'text-gray-800'}`}>
+                    {(() => {
+                        const paragraphs = book.summary.split('\n\n');
+
+                        if (isExpanded) {
+                            // Show all paragraphs when expanded
+                            return (
+                                <div className="space-y-4">
+                                    {paragraphs.map((paragraph, index) => (
+                                        <p key={index}>{paragraph}</p>
+                                    ))}
+                                </div>
+                            );
+                        } else {
+                            // Show only first paragraph when collapsed
+                            return (
+                                <div className="space-y-4">
+                                    <p>{paragraphs[0]}</p>
+
+                                    {/* Show "See More" button after first paragraph */}
+                                    {paragraphs.length > 1 && (
+                                        <button
+                                            onClick={() => setIsExpanded(true)}
+                                            className={`flex items-center gap-2 mt-4 px-4 py-2 rounded-md transition-colors ${isDarkMode
+                                                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                                }`}
+                                        >
+                                            <ChevronDown size={16} />
+                                            <span>See More</span>
+                                        </button>
+                                    )}
+                                </div>
+                            );
+                        }
+                    })()}
+
+                    {/* Show "Show Less" button only when expanded */}
+                    {isExpanded && (
+                        <button
+                            onClick={() => setIsExpanded(false)}
+                            className={`flex items-center gap-2 mt-4 px-4 py-2 rounded-md transition-colors ${isDarkMode
+                                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                }`}
+                        >
+                            <ChevronUp size={16} />
+                            <span>Show Less</span>
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Actionable Steps Section */}
@@ -562,7 +616,7 @@ const BookResult: React.FC<BookResultProps> = ({ book, isDarkMode, onActionSelec
                     <CheckCircle className="w-6 h-6 mr-3" />
                     7-Day Action Plan
                 </h3>
-                <ExportPdfButton book={book} isDarkMode={isDarkMode} />
+                <ExportPdfButton book={book} isDarkMode={isDarkMode} isExpanded={isExpanded} />
             </div>
                 <div className="grid gap-4">
                     {book.actionableSteps.map((actionableStep, index) => (
