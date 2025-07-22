@@ -17,6 +17,7 @@ const App: React.FC = () => {
     const [isTrendingLoading, setIsTrendingLoading] = useState(false);
     const [searchInputRef, setSearchInputRef] = useState<HTMLInputElement | null>(null);
     const [selectedAction, setSelectedAction] = useState<ActionableStep | null>(null);
+    const [currentSearchTitle, setCurrentSearchTitle] = useState<string>('');
     // Use localStorage to persist theme preference
     const [isDarkMode, setIsDarkMode] = useState(() => {
         const savedTheme = localStorage.getItem('theme');
@@ -77,6 +78,7 @@ const App: React.FC = () => {
         setIsLoading(true);
         setError(null);
         setCurrentBook(null);
+        setCurrentSearchTitle(title);
 
         let errorDetails = '';
         try {
@@ -133,6 +135,7 @@ const App: React.FC = () => {
         setCurrentBook(null);
         setError(null);
         setSelectedAction(null);
+        setCurrentSearchTitle('');
 
         // Focus the search input if available
         if (searchInputRef) {
@@ -144,6 +147,7 @@ const App: React.FC = () => {
         setError(null);
         setCurrentBook(null);
         setSelectedAction(null);
+        setCurrentSearchTitle('');
     };
 
     const handleActionSelect = (action: ActionableStep) => {
@@ -198,7 +202,9 @@ const App: React.FC = () => {
                         <div className="mt-4 text-center overflow-hidden max-w-4xl mx-auto px-6">
                             <div className="animated-text-container">
                                 <p className="animated-text">
-                                    Our AI is reading through the book to create a custom 7-day action plan and summary for you...
+                                    Our AI is reading through <span className={isDarkMode ? "text-white font-bold" : "text-black font-bold"}>
+                                        {currentSearchTitle ? `"${currentSearchTitle.toUpperCase()}"` : "the book"}
+                                    </span> to create a custom 7-day action plan and summary for you...
                                 </p>
                             </div>
                         </div>
