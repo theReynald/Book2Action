@@ -25,4 +25,6 @@ export interface BookSearchResult {
     success: boolean;
     book?: Book;
     error?: string;
+    rawContent?: string;
+    parseError?: string;
 }

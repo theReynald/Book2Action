@@ -97,10 +97,26 @@ Please analyze: "${bookTitle}"`;
             }
         );
 
-        const content = response.data.choices[0]?.message?.content;
+        let content = response.data.choices[0]?.message?.content;
         if (!content) {
             throw new Error('No content received from API');
         }
+
+        // Remove Markdown code fences if present
+        content = content.trim();
+        if (content.startsWith('```json')) {
+            content = content.replace(/^```json/, '').replace(/```$/, '').trim();
+        } else if (content.startsWith('```')) {
+            content = content.replace(/^```/, '').replace(/```$/, '').trim();
+        }
+
+        // Attempt to auto-repair common JSON issues
+        // Remove trailing commas before } or ]
+        content = content.replace(/,\s*([}\]])/g, '$1');
+        // Remove multiple consecutive commas
+        content = content.replace(/,+/g, ',');
+        // Remove any stray backticks
+        content = content.replace(/`+/g, '');
 
         // Try to parse the JSON response
         try {
@@ -312,10 +328,12 @@ export const searchBook = async (title: string): Promise<BookSearchResult> => {
             };
         }
 
-        // If AI fails, return error
+        // If AI fails, return error with diagnostic info
         return {
             success: false,
-            error: `Sorry, we couldn't find or analyze "${title}". Please try a different book title or check the spelling.`
+            error: `Sorry, we couldn't find or analyze "${title}". Please try a different book title or check the spelling.`,
+            rawContent: `Attempted title: ${title}\nAPI payload: { model: ${MODEL}, messages: [{ role: 'user', content: '${title}' }], temperature: 0.7, max_tokens: 4000 }`,
+            parseError: 'No valid book data returned from OpenRouter or fallback.'
         };
 
     } catch (error) {

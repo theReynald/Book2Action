@@ -78,19 +78,56 @@ const App: React.FC = () => {
         setError(null);
         setCurrentBook(null);
 
+        let errorDetails = '';
         try {
             const result: BookSearchResult = await searchBook(title);
 
             if (result.success && result.book) {
                 setCurrentBook(result.book);
             } else {
-                setError(result.error || 'An unexpected error occurred');
+                // Show detailed error if available
+                if (result.error) {
+                    setError(result.error);
+                    errorDetails = `Error: ${result.error}`;
+                    // If there are extra error fields, include them
+                    if ((result as any).rawContent) {
+                        errorDetails += `\n\nRaw content:\n${(result as any).rawContent}`;
+                    }
+                    if ((result as any).parseError) {
+                        errorDetails += `\n\nParse error:\n${(result as any).parseError}`;
+                    }
+                } else {
+                    setError('An unexpected error occurred.');
+                    errorDetails = 'No additional error details.';
+                }
             }
-        } catch (err) {
-            setError('Failed to search for the book. Please try again.');
+        } catch (err: any) {
+            // Show the actual error message if possible
+            let devDetails = '';
+            if (err) {
+                if (err.stack) {
+                    devDetails += `Stack Trace:\n${err.stack}\n`;
+                }
+                if (err.message) {
+                    devDetails += `Message: ${err.message}\n`;
+                }
+                if (err.response) {
+                    devDetails += `API Response: ${JSON.stringify(err.response.data, null, 2)}\n`;
+                    devDetails += `Status: ${err.response.status}\n`;
+                    devDetails += `Status Text: ${err.response.statusText}\n`;
+                }
+                if (err.config) {
+                    devDetails += `Request URL: ${err.config.url}\n`;
+                    devDetails += `Request Headers: ${JSON.stringify(err.config.headers, null, 2)}\n`;
+                }
+            }
+            setError(err && err.message ? `Failed to search for the book: ${err.message}` : 'Failed to search for the book. Please try again.');
+            errorDetails = devDetails || 'No additional error details.';
         } finally {
             setIsLoading(false);
         }
+        // Store error details in state for ErrorMessage
+        (window as any).book2actionErrorDetails = errorDetails;
     }; const handleSearchFocus = () => {
         // Reset to home state when clicking the title
         setCurrentBook(null);
@@ -146,7 +183,7 @@ const App: React.FC = () => {
                 )}
 
                 {error && (
-                    <ErrorMessage message={error} onRetry={handleRetry} />
+                    <ErrorMessage message={error} details={(window as any).book2actionErrorDetails || ''} onRetry={handleRetry} />
                 )}
 
                 {isLoading && (
