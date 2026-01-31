@@ -1,0 +1,246 @@
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
+import { Book } from '../types/Book';
+
+/**
+ * Generate HTML content for PDF export
+ */
+const generatePdfHtml = (book: Book): string => {
+  const actionStepsHtml = book.actionableSteps
+    .map((step, index) => `
+      <div class="action-step">
+        <div class="step-header">
+          <span class="step-number">${index + 1}</span>
+          <span class="step-day">${step.day || `Day ${index + 1}`}</span>
+        </div>
+        <p class="step-text">${step.step}</p>
+        <p class="step-chapter">From: ${step.chapter}</p>
+      </div>
+    `)
+    .join('');
+
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>${book.title} - Action Plan</title>
+        <style>
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #1a202c;
+            padding: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+          }
+          
+          .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #3b82f6;
+          }
+          
+          .book-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 8px;
+          }
+          
+          .book-author {
+            font-size: 18px;
+            color: #64748b;
+            margin-bottom: 4px;
+          }
+          
+          .book-meta {
+            font-size: 14px;
+            color: #94a3b8;
+          }
+          
+          .section {
+            margin-bottom: 32px;
+          }
+          
+          .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e2e8f0;
+          }
+          
+          .summary {
+            font-size: 15px;
+            line-height: 1.8;
+            color: #334155;
+            white-space: pre-line;
+          }
+          
+          .action-plan-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 20px;
+            text-align: center;
+          }
+          
+          .action-step {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border-left: 4px solid #3b82f6;
+          }
+          
+          .step-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+          }
+          
+          .step-number {
+            background: #3b82f6;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            margin-right: 12px;
+          }
+          
+          .step-day {
+            font-weight: 600;
+            color: #3b82f6;
+            font-size: 14px;
+          }
+          
+          .step-text {
+            font-size: 15px;
+            color: #1e293b;
+            margin-bottom: 8px;
+            line-height: 1.6;
+          }
+          
+          .step-chapter {
+            font-size: 12px;
+            color: #64748b;
+            font-style: italic;
+          }
+          
+          .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            text-align: center;
+            font-size: 12px;
+            color: #94a3b8;
+          }
+          
+          @media print {
+            body {
+              padding: 20px;
+            }
+            
+            .action-step {
+              break-inside: avoid;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1 class="book-title">${book.title}</h1>
+          <p class="book-author">by ${book.author}</p>
+          ${book.genre ? `<p class="book-meta">${book.genre}${book.publishedYear ? ` • ${book.publishedYear}` : ''}</p>` : ''}
+        </div>
+        
+        <div class="section">
+          <h2 class="section-title">Summary</h2>
+          <p class="summary">${book.summary}</p>
+        </div>
+        
+        <div class="section">
+          <h2 class="action-plan-title">7-Day Action Plan</h2>
+          ${actionStepsHtml}
+        </div>
+        
+        <div class="footer">
+          <p>Generated by Book2Action</p>
+          <p>${new Date().toLocaleDateString()}</p>
+        </div>
+      </body>
+    </html>
+  `;
+};
+
+/**
+ * Export book data to PDF and share it
+ */
+export const exportToPdf = async (book: Book): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const html = generatePdfHtml(book);
+    
+    // Generate PDF file
+    const { uri } = await Print.printToFileAsync({
+      html,
+      base64: false,
+    });
+    
+    // Check if sharing is available
+    const isAvailable = await Sharing.isAvailableAsync();
+    
+    if (isAvailable) {
+      // Share the PDF file
+      await Sharing.shareAsync(uri, {
+        mimeType: 'application/pdf',
+        dialogTitle: `${book.title} - Action Plan`,
+        UTI: 'com.adobe.pdf',
+      });
+      
+      return { success: true };
+    } else {
+      return { 
+        success: false, 
+        error: 'Sharing is not available on this device' 
+      };
+    }
+  } catch (error) {
+    console.error('Error exporting to PDF:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to export PDF' 
+    };
+  }
+};
+
+/**
+ * Print book data directly (opens print dialog)
+ */
+export const printBook = async (book: Book): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const html = generatePdfHtml(book);
+    await Print.printAsync({ html });
+    return { success: true };
+  } catch (error) {
+    console.error('Error printing:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to print' 
+    };
+  }
+};

@@ -24,6 +24,7 @@ import {
   ChevronDown,
   ChevronUp,
   Check,
+  FileDown,
 } from 'lucide-react-native';
 import { useThemeStore } from '../../stores/themeStore';
 import { useBookStore } from '../../stores/bookStore';
@@ -35,6 +36,7 @@ import {
   generateCalendarEventData,
   addToGoogleCalendar 
 } from '../../utils/calendarLinks';
+import { exportToPdf } from '../../utils/pdfExport';
 
 export default function BookResultScreen() {
   const router = useRouter();
@@ -44,6 +46,7 @@ export default function BookResultScreen() {
   const [isExpanded, setIsExpanded] = React.useState(false);
   const [addingStepIndex, setAddingStepIndex] = useState<number | null>(null);
   const [addedSteps, setAddedSteps] = useState<Set<number>>(new Set());
+  const [isExporting, setIsExporting] = useState(false);
 
   if (!currentBook) {
     return (
@@ -108,6 +111,19 @@ export default function BookResultScreen() {
       pathname: '/action/[id]',
       params: { id: index.toString() }
     });
+  };
+
+  const handleExportPdf = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setIsExporting(true);
+    
+    const result = await exportToPdf(book);
+    
+    setIsExporting(false);
+    
+    if (!result.success) {
+      Alert.alert('Export Failed', result.error || 'Could not export PDF');
+    }
   };
 
   const summaryParagraphs = book.summary.split('\n\n');
@@ -183,19 +199,43 @@ export default function BookResultScreen() {
                 </View>
               )}
 
-              {/* Buy on Amazon Button */}
-              <TouchableOpacity
-                onPress={handleOpenAmazon}
-                style={{
-                  backgroundColor: colors.amazon,
-                  paddingVertical: 8,
-                  paddingHorizontal: 12,
-                  borderRadius: 6,
-                  alignSelf: 'flex-start',
-                }}
-              >
-                <Text style={{ color: '#000', fontWeight: '600', fontSize: 13 }}>Buy on Amazon</Text>
-              </TouchableOpacity>
+              {/* Action Buttons */}
+              <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+                <TouchableOpacity
+                  onPress={handleOpenAmazon}
+                  style={{
+                    backgroundColor: colors.amazon,
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
+                    borderRadius: 6,
+                  }}
+                >
+                  <Text style={{ color: '#000', fontWeight: '600', fontSize: 13 }}>Buy on Amazon</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  onPress={handleExportPdf}
+                  disabled={isExporting}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: colors.primary.DEFAULT,
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
+                    borderRadius: 6,
+                    opacity: isExporting ? 0.7 : 1,
+                  }}
+                >
+                  {isExporting ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <>
+                      <FileDown size={14} color="#fff" />
+                      <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13, marginLeft: 6 }}>Export PDF</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </View>
