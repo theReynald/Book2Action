@@ -21,7 +21,7 @@ import {
   generateDetailedCalendarEventData,
   addToGoogleCalendar 
 } from '../../utils/calendarLinks';
-import ReadAloudControls from '../../components/ReadAloudControls';
+import HighlightedText from '../../components/HighlightedText';
 
 export default function ActionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -113,7 +113,7 @@ export default function ActionDetailScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: bgColor }} edges={['bottom']}>
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }}>
         {/* Main Card */}
         <View style={{
           backgroundColor: cardBg,
@@ -153,9 +153,14 @@ export default function ActionDetailScreen() {
             )}
           </View>
 
-          {/* Read Aloud Controls */}
-          <View style={{ marginBottom: 20 }}>
-            <ReadAloudControls text={fullReadText} />
+          {/* Read Aloud with Highlighting */}
+          <View style={{ 
+            marginBottom: 20,
+            backgroundColor: isDarkMode ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.05)',
+            padding: 12,
+            borderRadius: 12,
+          }}>
+            <HighlightedText text={fullReadText} />
           </View>
 
           {/* Key Takeaway */}
@@ -188,11 +193,8 @@ export default function ActionDetailScreen() {
             borderTopWidth: 1,
             borderTopColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
             paddingTop: 16,
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
           }}>
-            <Text style={{ color: textMuted, fontSize: 14 }}>
+            <Text style={{ color: textMuted, fontSize: 14, marginBottom: 12 }}>
               From <Text style={{ fontWeight: '500' }}>{currentBook.title}</Text>
             </Text>
 
@@ -202,9 +204,10 @@ export default function ActionDetailScreen() {
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
+                justifyContent: 'center',
                 backgroundColor: addedToCalendar ? colors.success : colors.primary.DEFAULT,
-                paddingVertical: 10,
-                paddingHorizontal: 16,
+                paddingVertical: 12,
+                paddingHorizontal: 20,
                 borderRadius: 8,
                 opacity: isAddingToCalendar ? 0.7 : 1,
               }}

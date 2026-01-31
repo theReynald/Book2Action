@@ -38,6 +38,7 @@ import {
 } from '../../utils/calendarLinks';
 import { exportToPdf } from '../../utils/pdfExport';
 import ReadAloudControls from '../../components/ReadAloudControls';
+import HighlightedText from '../../components/HighlightedText';
 
 export default function BookResultScreen() {
   const router = useRouter();
@@ -253,25 +254,17 @@ export default function BookResultScreen() {
           shadowRadius: 12,
           elevation: 5,
         }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <BookOpen size={24} color={colors.primary.DEFAULT} />
-              <Text style={{ fontSize: 20, fontWeight: 'bold', color: textColor, marginLeft: 12 }}>
-                Summary
-              </Text>
-            </View>
-            <ReadAloudControls text={book.summary} compact />
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+            <BookOpen size={24} color={colors.primary.DEFAULT} />
+            <Text style={{ fontSize: 20, fontWeight: 'bold', color: textColor, marginLeft: 12 }}>
+              Summary
+            </Text>
           </View>
 
-          <Text style={{ color: textColor, fontSize: 15, lineHeight: 24, marginBottom: 12 }}>
-            {summaryParagraphs[0]}
-          </Text>
-
-          {isExpanded && summaryParagraphs.slice(1).map((paragraph, index) => (
-            <Text key={index} style={{ color: textColor, fontSize: 15, lineHeight: 24, marginBottom: 12 }}>
-              {paragraph}
-            </Text>
-          ))}
+          {/* Highlighted text with read aloud - shows current sentence being read */}
+          <HighlightedText 
+            text={isExpanded ? book.summary : summaryParagraphs[0]} 
+          />
 
           {summaryParagraphs.length > 1 && (
             <TouchableOpacity
@@ -287,6 +280,7 @@ export default function BookResultScreen() {
                 paddingHorizontal: 16,
                 borderRadius: 8,
                 alignSelf: 'flex-start',
+                marginTop: 12,
               }}
             >
               {isExpanded ? (
