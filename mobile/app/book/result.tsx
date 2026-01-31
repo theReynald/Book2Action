@@ -37,6 +37,7 @@ import {
   addToGoogleCalendar 
 } from '../../utils/calendarLinks';
 import { exportToPdf } from '../../utils/pdfExport';
+import ReadAloudControls from '../../components/ReadAloudControls';
 
 export default function BookResultScreen() {
   const router = useRouter();
@@ -252,11 +253,14 @@ export default function BookResultScreen() {
           shadowRadius: 12,
           elevation: 5,
         }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-            <BookOpen size={24} color={colors.primary.DEFAULT} />
-            <Text style={{ fontSize: 20, fontWeight: 'bold', color: textColor, marginLeft: 12 }}>
-              Summary
-            </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <BookOpen size={24} color={colors.primary.DEFAULT} />
+              <Text style={{ fontSize: 20, fontWeight: 'bold', color: textColor, marginLeft: 12 }}>
+                Summary
+              </Text>
+            </View>
+            <ReadAloudControls text={book.summary} compact />
           </View>
 
           <Text style={{ color: textColor, fontSize: 15, lineHeight: 24, marginBottom: 12 }}>

@@ -176,15 +176,15 @@ export default function HomeScreen() {
             </Text>
 
             {/* Feature Indicators */}
-            <View style={{ flexDirection: 'row', marginTop: 20, gap: 24 }}>
+            <View style={{ flexDirection: 'row', marginTop: 20, gap: 16, paddingHorizontal: 16, justifyContent: 'center' }}>
               {[
                 { icon: Search, label: 'Search Books' },
                 { icon: BookOpen, label: 'Get Summary' },
                 { icon: Lightbulb, label: 'Actionable Steps' },
               ].map(({ icon: Icon, label }) => (
                 <View key={label} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Icon size={16} color={textMuted} />
-                  <Text style={{ marginLeft: 6, color: textMuted, fontSize: 12 }}>{label}</Text>
+                  <Icon size={14} color={textMuted} />
+                  <Text style={{ marginLeft: 4, color: textMuted, fontSize: 11 }}>{label}</Text>
                 </View>
               ))}
             </View>

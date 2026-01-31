@@ -10,6 +10,7 @@
     "prebuild": "expo prebuild"
   },
   "dependencies": {
+    "@react-native-community/slider": "^5.1.2",
     "@tanstack/react-query": "^5.90.20",
     "axios": "^1.13.4",
     "expo": "~54.0.32",

@@ -21,6 +21,7 @@ import {
   generateDetailedCalendarEventData,
   addToGoogleCalendar 
 } from '../../utils/calendarLinks';
+import ReadAloudControls from '../../components/ReadAloudControls';
 
 export default function ActionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -58,6 +59,9 @@ export default function ActionDetailScreen() {
     ],
     keyTakeaway: `The most important aspect of "${step.step}" is consistency and intentional practice.`
   };
+
+  // Build the full text for Read Aloud
+  const fullReadText = `${step.step}. Key Takeaway: ${details.keyTakeaway}. Detailed Implementation: ${details.sentences.join('. ')}`;
 
   const handleAddToCalendar = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -127,7 +131,7 @@ export default function ActionDetailScreen() {
           </Text>
 
           {/* Info Row */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <BookOpen size={16} color={colors.primary.light} />
               <Text style={{ marginLeft: 6, color: colors.primary.light, fontSize: 14 }}>
@@ -147,6 +151,11 @@ export default function ActionDetailScreen() {
                 </Text>
               </View>
             )}
+          </View>
+
+          {/* Read Aloud Controls */}
+          <View style={{ marginBottom: 20 }}>
+            <ReadAloudControls text={fullReadText} />
           </View>
 
           {/* Key Takeaway */}

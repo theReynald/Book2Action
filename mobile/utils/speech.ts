@@ -15,17 +15,79 @@ export const getAvailableVoices = async (): Promise<VoiceOption[]> => {
   try {
     const voices = await Speech.getAvailableVoicesAsync();
     
-    // Filter for English voices and sort by quality
+    console.log('Total voices found:', voices.length);
+    
+    // Filter for proper English speech voices (exclude novelty/character voices)
+    const noveltyVoices = [
+      'albert', 'bad news', 'bahh', 'bells', 'boing', 'bubbles', 'cellos',
+      'good news', 'jester', 'organ', 'superstar', 'trinoids', 'whisper',
+      'zarvox', 'bruce', 'fred', 'junior', 'kathy', 'princess', 'ralph',
+      'agnes', 'hysterical', 'flo', 'grandma', 'grandpa', 'eddy', 'reed',
+      'rocko', 'sandy', 'shelley', 'wobble', 'deranged', 'pipe organ'
+    ];
+    
     const englishVoices = voices
-      .filter(voice => voice.language.includes('en'))
+      .filter(voice => {
+        // Must have English language
+        if (!voice.language.includes('en')) return false;
+        
+        // Exclude novelty/sound effect voices
+        const nameLower = (voice.name || '').toLowerCase();
+        if (noveltyVoices.some(nv => nameLower.includes(nv))) return false;
+        
+        // Must have a proper name (not just identifier)
+        if (!voice.name || voice.name.length < 3) return false;
+        
+        return true;
+      });
+    
+    // Deduplicate voices by name (keep Enhanced quality over Standard)
+    const voiceMap = new Map<string, typeof voices[0]>();
+    for (const voice of englishVoices) {
+      const baseName = (voice.name || '').toLowerCase().trim();
+      const existing = voiceMap.get(baseName);
+      if (!existing) {
+        voiceMap.set(baseName, voice);
+      } else {
+        // Prefer Enhanced/Premium quality
+        const existingIsEnhanced = existing.quality === 'Enhanced' || 
+                                   existing.name?.includes('Premium');
+        const newIsEnhanced = voice.quality === 'Enhanced' || 
+                             voice.name?.includes('Premium');
+        if (newIsEnhanced && !existingIsEnhanced) {
+          voiceMap.set(baseName, voice);
+        }
+      }
+    }
+    
+    const uniqueVoices = Array.from(voiceMap.values())
       .sort((a, b) => {
-        // Prioritize Google UK Female
-        const aIsGoogleUK = a.name?.toLowerCase().includes('google') && 
-                           a.name?.toLowerCase().includes('uk');
-        const bIsGoogleUK = b.name?.toLowerCase().includes('google') && 
-                           b.name?.toLowerCase().includes('uk');
-        if (aIsGoogleUK && !bIsGoogleUK) return -1;
-        if (!aIsGoogleUK && bIsGoogleUK) return 1;
+        // Note: "Google UK English Female" is a web browser voice, not available on iOS
+        // On iOS, best UK voices are: Daniel (male), Kate (female)
+        
+        // Daniel (UK English - best British voice on iOS)
+        const aIsDaniel = a.name?.toLowerCase().includes('daniel');
+        const bIsDaniel = b.name?.toLowerCase().includes('daniel');
+        if (aIsDaniel && !bIsDaniel) return -1;
+        if (!aIsDaniel && bIsDaniel) return 1;
+        
+        // Kate (UK English female)
+        const aIsKate = a.name?.toLowerCase().includes('kate');
+        const bIsKate = b.name?.toLowerCase().includes('kate');
+        if (aIsKate && !bIsKate) return -1;
+        if (!aIsKate && bIsKate) return 1;
+        
+        // Samantha (default iOS high quality voice)
+        const aIsSamantha = a.name?.toLowerCase().includes('samantha');
+        const bIsSamantha = b.name?.toLowerCase().includes('samantha');
+        if (aIsSamantha && !bIsSamantha) return -1;
+        if (!aIsSamantha && bIsSamantha) return 1;
+        
+        // Prioritize UK/GB voices
+        const aIsUK = a.language?.includes('en-GB') || a.language?.includes('en_GB');
+        const bIsUK = b.language?.includes('en-GB') || b.language?.includes('en_GB');
+        if (aIsUK && !bIsUK) return -1;
+        if (!aIsUK && bIsUK) return 1;
         
         // Then prioritize Google voices
         const aIsGoogle = a.name?.toLowerCase().includes('google');
@@ -52,7 +114,10 @@ export const getAvailableVoices = async (): Promise<VoiceOption[]> => {
         quality: voice.quality,
       }));
     
-    return englishVoices;
+    console.log('Filtered English voices:', uniqueVoices.length);
+    console.log('Top voices:', uniqueVoices.slice(0, 5).map(v => `${v.name} (${v.language})`));
+    
+    return uniqueVoices;
   } catch (error) {
     console.error('Error getting voices:', error);
     return [];
@@ -71,12 +136,31 @@ export const speakText = (
     onError?: (error: Error) => void;
   }
 ): void => {
+  // Ensure text is not empty
+  if (!text || text.trim().length === 0) {
+    console.warn('speakText called with empty text');
+    options?.onError?.(new Error('No text to speak'));
+    return;
+  }
+
+  console.log('Speaking text:', text.substring(0, 50) + '...');
+  console.log('Speech options:', { rate: options?.rate, voice: options?.voice });
+  
   Speech.speak(text, {
     rate: options?.rate ?? 1.0,
     voice: options?.voice,
     pitch: 1.0,
-    onDone: options?.onDone,
-    onError: options?.onError,
+    onDone: () => {
+      console.log('Speech completed');
+      options?.onDone?.();
+    },
+    onError: (error) => {
+      console.error('Speech error:', error);
+      options?.onError?.(error as Error);
+    },
+    onStart: () => {
+      console.log('Speech started');
+    },
   });
 };
 
