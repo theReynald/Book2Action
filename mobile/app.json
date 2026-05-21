@@ -15,14 +15,20 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.book2action.app"
+      "bundleIdentifier": "com.book2action.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCalendarsUsageDescription": "Book2Action needs access to your calendar to add action step reminders.",
+        "NSCalendarsFullAccessUsageDescription": "Book2Action needs access to your calendar to add action step reminders."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1a202c"
       },
-      "package": "com.book2action.app"
+      "package": "com.book2action.app",
+      "versionCode": 1
     },
     "web": {
       "bundler": "metro",
@@ -35,6 +41,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "de7dd0ff-ebe0-4c52-bab5-8f1966aa8308"
+      },
+      "router": {}
+    },
+    "owner": "thereynald"
   }
 }
