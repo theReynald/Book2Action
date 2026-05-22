@@ -23,5 +23,8 @@
       "extends": "base",
       "autoIncrement": true
     }
+  },
+  "submit": {
+    "production": {}
   }
 }

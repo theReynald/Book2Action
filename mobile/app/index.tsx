@@ -23,6 +23,7 @@ import {
   Moon,
   RefreshCw,
   Settings,
+  X,
 } from "lucide-react-native";
 import { useThemeStore } from "../stores/themeStore";
 import { useBookStore } from "../stores/bookStore";
@@ -347,6 +348,19 @@ export default function HomeScreen() {
                   editable={!isLoading}
                   returnKeyType="search"
                 />
+                {searchTerm.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      handleTextChange("");
+                    }}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    accessibilityLabel="Clear search"
+                    accessibilityRole="button"
+                  >
+                    <X size={18} color={textMuted} />
+                  </TouchableOpacity>
+                )}
               </View>
 
               {/* Typeahead Suggestions */}
