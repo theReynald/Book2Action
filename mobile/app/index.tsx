@@ -73,6 +73,10 @@ export default function HomeScreen() {
   const [searchTerm, setSearchTerm] = useState("");
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [trendingBooks, setTrendingBooks] = useState(getRandomBooks());
+  // Per-ISBN cover load stage: undefined => try OpenLibrary, 'fallback' => try Google Books, 'failed' => show placeholder
+  const [coverStage, setCoverStage] = useState<
+    Record<string, "fallback" | "failed">
+  >({});
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [suggestions, setSuggestions] = useState<OpenLibraryBook[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -527,7 +531,13 @@ export default function HomeScreen() {
           {/* Loading State */}
           {isLoading && (
             <View style={{ alignItems: "center", marginVertical: 32 }}>
-              <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
+              <Image
+                source={{
+                  uri: "https://media.giphy.com/media/LYBMuRwH3JkhdmLbGE/giphy.gif",
+                }}
+                style={{ width: 160, height: 160 }}
+                resizeMode="contain"
+              />
               <Text
                 style={{
                   marginTop: 16,
@@ -666,24 +676,48 @@ export default function HomeScreen() {
                         backgroundColor: isDarkMode ? "#2d3748" : "#e2e8f0",
                       }}
                     >
-                      {book.coverImageUrl ? (
-                        <Image
-                          source={{ uri: book.coverImageUrl }}
-                          style={{ width: "100%", height: "100%" }}
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <View
-                          style={{
-                            flex: 1,
-                            justifyContent: "center",
-                            alignItems: "center",
-                            backgroundColor: colors.primary.DEFAULT,
-                          }}
-                        >
-                          <BookOpen size={32} color="#fff" />
-                        </View>
-                      )}
+                      {(() => {
+                        const stage = book.isbn
+                          ? coverStage[book.isbn]
+                          : undefined;
+                        const primaryUrl = book.coverImageUrl;
+                        const googleUrl = book.isbn
+                          ? `https://books.google.com/books/content?vid=ISBN${book.isbn}&printsec=frontcover&img=1&zoom=1`
+                          : undefined;
+                        const uri =
+                          stage === "fallback"
+                            ? googleUrl
+                            : primaryUrl || googleUrl;
+                        const showPlaceholder = stage === "failed" || !uri;
+                        return !showPlaceholder ? (
+                          <Image
+                            source={{ uri }}
+                            style={{ width: "100%", height: "100%" }}
+                            resizeMode="cover"
+                            onError={() => {
+                              if (!book.isbn) return;
+                              setCoverStage((prev) => ({
+                                ...prev,
+                                [book.isbn!]:
+                                  prev[book.isbn!] === "fallback" || !googleUrl
+                                    ? "failed"
+                                    : "fallback",
+                              }));
+                            }}
+                          />
+                        ) : (
+                          <View
+                            style={{
+                              flex: 1,
+                              justifyContent: "center",
+                              alignItems: "center",
+                              backgroundColor: colors.primary.DEFAULT,
+                            }}
+                          >
+                            <BookOpen size={32} color="#fff" />
+                          </View>
+                        );
+                      })()}
                     </View>
                     <Text
                       style={{
